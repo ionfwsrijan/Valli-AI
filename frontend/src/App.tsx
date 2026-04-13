@@ -22,7 +22,7 @@ import type {
 
 const GREETING_MESSAGE =
   "Hello! I am Valli. You may use text or voice for taking the assessment.";
-const SPEECH_RATE = 1.55;
+const SPEECH_RATE = 1.2;
 const SPEECH_PITCH = 1.02;
 const FEMININE_VOICE_HINTS = [
   "heera",
@@ -187,7 +187,10 @@ export default function App() {
     try {
       const created = await createSession();
       setSession(created);
-      speakEntries([GREETING_MESSAGE, getQuestionPrompt(created.current_question)]);
+      speakEntries([
+        GREETING_MESSAGE,
+        getQuestionPrompt(created.current_question),
+      ]);
       await refreshDashboard();
     } catch (requestError) {
       setError(
@@ -211,10 +214,7 @@ export default function App() {
     setError(null);
 
     try {
-      const updated = await submitAnswer(
-        session.session_id,
-        answerText,
-      );
+      const updated = await submitAnswer(session.session_id, answerText);
       setSession(updated);
       setDraftAnswer("");
       speech.resetTranscript();
