@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.conversation_router import classify_input
-from app.questionnaire import QUESTION_MAP
+from app.questionnaire import QUESTION_MAP, apply_parsed_answer, is_question_complete, parse_answer, question_to_payload
 from app.main import app
 
 
@@ -160,6 +160,42 @@ def test_choice_answers_do_not_trigger_policy_routing() -> None:
     assert nyha_result["parsed_answer"] == "2"
     assert mmrc_result["mode"] == "answer_only"
     assert mmrc_result["parsed_answer"] == "2"
+
+
+def test_compound_habit_questions_reask_only_missing_details() -> None:
+    smoking_answers = {"smoking_history": True}
+    smoking_question = QUESTION_MAP["smoking_details"]
+
+    smoking_parsed = parse_answer(smoking_question, "4 packs per day", smoking_answers)
+    apply_parsed_answer(smoking_question, smoking_answers, smoking_parsed)
+
+    assert smoking_answers["smoking_packs_per_day"] == 4
+    assert not is_question_complete(smoking_question, smoking_answers)
+    smoking_payload = question_to_payload(smoking_question, smoking_answers)
+    assert smoking_payload["text"] == "Thank you. I still need the number of years of this habit and the last puff."
+
+    smoking_parsed = parse_answer(smoking_question, "10 years and yesterday", smoking_answers)
+    apply_parsed_answer(smoking_question, smoking_answers, smoking_parsed)
+
+    assert is_question_complete(smoking_question, smoking_answers)
+    assert smoking_answers["smoking_details"] == "10 years, 4 packs per day, last puff: yesterday"
+
+    alcohol_answers = {"alcohol_history": True}
+    alcohol_question = QUESTION_MAP["alcohol_details"]
+
+    alcohol_parsed = parse_answer(alcohol_question, "12 years", alcohol_answers)
+    apply_parsed_answer(alcohol_question, alcohol_answers, alcohol_parsed)
+
+    assert alcohol_answers["alcohol_years"] == 12
+    assert not is_question_complete(alcohol_question, alcohol_answers)
+    alcohol_payload = question_to_payload(alcohol_question, alcohol_answers)
+    assert alcohol_payload["text"] == "Thank you. I still need the last drink."
+
+    alcohol_parsed = parse_answer(alcohol_question, "yesterday evening", alcohol_answers)
+    apply_parsed_answer(alcohol_question, alcohol_answers, alcohol_parsed)
+
+    assert is_question_complete(alcohol_question, alcohol_answers)
+    assert alcohol_answers["alcohol_details"] == "12 years, last drink: yesterday"
 
 
 def test_policy_only_question_does_not_consume_current_question() -> None:

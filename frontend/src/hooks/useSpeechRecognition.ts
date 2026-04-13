@@ -31,6 +31,7 @@ declare global {
 
 export function useSpeechRecognition() {
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null)
+  const acceptResultsRef = useRef(false)
   const [isSupported, setIsSupported] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
@@ -49,6 +50,10 @@ export function useSpeechRecognition() {
     recognition.lang = 'en-IN'
 
     recognition.onresult = (event) => {
+      if (!acceptResultsRef.current) {
+        return
+      }
+
       let combined = ''
       for (let index = event.resultIndex; index < event.results.length; index += 1) {
         combined += event.results[index][0].transcript
@@ -62,6 +67,7 @@ export function useSpeechRecognition() {
     }
 
     recognition.onend = () => {
+      acceptResultsRef.current = false
       setIsListening(false)
     }
 
@@ -69,6 +75,7 @@ export function useSpeechRecognition() {
     setIsSupported(true)
 
     return () => {
+      acceptResultsRef.current = false
       recognition.stop()
       recognitionRef.current = null
     }
@@ -78,6 +85,7 @@ export function useSpeechRecognition() {
     if (!recognitionRef.current) {
       return
     }
+    acceptResultsRef.current = true
     setTranscript('')
     setError(null)
     setIsListening(true)
@@ -85,11 +93,15 @@ export function useSpeechRecognition() {
   }
 
   const stopListening = () => {
+    acceptResultsRef.current = false
     recognitionRef.current?.stop()
     setIsListening(false)
   }
 
-  const resetTranscript = () => setTranscript('')
+  const resetTranscript = () => {
+    acceptResultsRef.current = false
+    setTranscript('')
+  }
 
   return {
     error,

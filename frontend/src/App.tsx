@@ -83,6 +83,7 @@ export default function App() {
 
   const getQuestionPrompt = (question: SessionSnapshot["current_question"]) =>
     question?.prompt_text ?? question?.text ?? "";
+  const currentQuestionId = session?.current_question?.id ?? null;
 
   useEffect(() => {
     void refreshDashboard();
@@ -115,6 +116,12 @@ export default function App() {
     }
     setDraftAnswer(speech.transcript);
   }, [speech.transcript]);
+
+  useEffect(() => {
+    setDraftAnswer("");
+    speech.resetTranscript();
+    speech.stopListening();
+  }, [currentQuestionId]);
 
   const refreshDashboard = async () => {
     try {
@@ -199,6 +206,7 @@ export default function App() {
       return;
     }
 
+    speech.stopListening();
     setBusy(true);
     setError(null);
 

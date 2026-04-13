@@ -29,6 +29,36 @@ YES_VALUES = {"yes", "y", "yeah", "yep", "affirmative", "true", "1"}
 NO_VALUES = {"no", "n", "nope", "negative", "false", "0"}
 SKIP_VALUES = {"skip", "not available", "na", "n/a", "don't have it", "do not have it", "unknown"}
 
+COMPOUND_QUESTION_FIELDS: dict[str, tuple[str, ...]] = {
+    "smoking_details": ("smoking_years", "smoking_packs_per_day", "smoking_last_puff"),
+    "alcohol_details": ("alcohol_years", "alcohol_last_drink"),
+}
+
+COMPOUND_QUESTION_LABELS: dict[str, dict[str, str]] = {
+    "smoking_details": {
+        "smoking_years": "the number of years of this habit",
+        "smoking_packs_per_day": "packs per day",
+        "smoking_last_puff": "the last puff",
+    },
+    "alcohol_details": {
+        "alcohol_years": "the number of years of this habit",
+        "alcohol_last_drink": "the last drink",
+    },
+}
+
+TIME_REFERENCE_PATTERNS = (
+    r"\btoday\b",
+    r"\byesterday\b",
+    r"\btonight\b",
+    r"\bthis morning\b",
+    r"\bthis afternoon\b",
+    r"\bthis evening\b",
+    r"\blast night\b",
+    r"\blast week\b",
+    r"\blast month\b",
+    r"\b\d+(?:\.\d+)?\s*(?:minute|minutes|hour|hours|day|days|week|weeks|month|months|year|years)\s+ago\b",
+)
+
 
 def merge_depends_on(*parts: dict[str, Any]) -> dict[str, Any]:
     merged: dict[str, Any] = {}
@@ -589,6 +619,39 @@ def is_skip_answer(raw_answer: str) -> bool:
     return normalized in SKIP_VALUES
 
 
+def missing_compound_fields(question_id: str, answers: dict[str, Any]) -> list[str]:
+    missing: list[str] = []
+    for field_name in COMPOUND_QUESTION_FIELDS.get(question_id, ()):
+        value = answers.get(field_name)
+        if value is None or value == "":
+            missing.append(field_name)
+    return missing
+
+
+def join_missing_labels(labels: list[str]) -> str:
+    if not labels:
+        return ""
+    if len(labels) == 1:
+        return labels[0]
+    if len(labels) == 2:
+        return f"{labels[0]} and {labels[1]}"
+    return f"{', '.join(labels[:-1])}, and {labels[-1]}"
+
+
+def compound_followup_text(question_id: str, answers: dict[str, Any]) -> str:
+    missing = missing_compound_fields(question_id, answers)
+    labels = [COMPOUND_QUESTION_LABELS[question_id][field] for field in missing]
+    if question_id == "smoking_details":
+        if missing:
+            return f"Thank you. I still need {join_missing_labels(labels)}."
+        return "Could you mention the number of years of this habit, packs per day and the last puff?"
+    if question_id == "alcohol_details":
+        if missing:
+            return f"Thank you. I still need {join_missing_labels(labels)}."
+        return "Could you please mention the number of years of this habit and the last drink?"
+    return QUESTION_MAP[question_id].text
+
+
 def body_metrics_missing_fields(answers: dict[str, Any]) -> list[str]:
     missing: list[str] = []
     if answers.get("weight_kg") is None:
@@ -610,8 +673,107 @@ def body_metrics_followup_text(answers: dict[str, Any] | None = None) -> str:
     return "Please tell me both your weight in kilograms and your height in centimeters."
 
 
+def extract_years_value(raw_answer: str) -> float | None:
+    match = re.search(r"(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b", raw_answer)
+    return round(float(match.group(1)), 2) if match else None
+
+
+def extract_packs_per_day_value(raw_answer: str) -> float | None:
+    match = re.search(
+        r"(\d+(?:\.\d+)?)\s*(?:packs?\s*(?:/|per)?\s*day|packs?\s*a\s*day|pack\s*(?:/|per)\s*day|pack\s*a\s*day)\b",
+        raw_answer,
+    )
+    return round(float(match.group(1)), 2) if match else None
+
+
+def extract_time_reference(raw_answer: str, *, keywords: tuple[str, ...]) -> str | None:
+    lowered = raw_answer.strip().lower()
+
+    for keyword in keywords:
+        keyword_match = re.search(rf"{keyword}\s*(?:was|is|:)?\s*(.+)", lowered)
+        if keyword_match:
+            candidate = keyword_match.group(1).strip(" ,.;:-")
+            if candidate:
+                return candidate
+
+    for pattern in TIME_REFERENCE_PATTERNS:
+        match = re.search(pattern, lowered)
+        if match:
+            return match.group(0).strip(" ,.;:-")
+
+    if lowered and not re.search(r"\d", lowered):
+        cleaned = re.sub(r"\b(?:and|about|around|approximately|approx|for|since|it was|it is)\b", " ", lowered)
+        candidate = re.sub(r"\s+", " ", cleaned).strip(" ,.;:-")
+        if candidate:
+            return candidate
+
+    return None
+
+
+def parse_compound_question(question: Question, raw_answer: str, answers: dict[str, Any] | None = None) -> dict[str, Any]:
+    active_answers = answers or {}
+    lowered = raw_answer.strip().lower()
+    parsed: dict[str, Any] = {}
+
+    if question.id == "smoking_details":
+        years = extract_years_value(lowered)
+        packs_per_day = extract_packs_per_day_value(lowered)
+        last_puff = extract_time_reference(lowered, keywords=("last puff", "last smoke", "last cigarette"))
+
+        if years is not None:
+            parsed["smoking_years"] = years
+        if packs_per_day is not None:
+            parsed["smoking_packs_per_day"] = packs_per_day
+        if last_puff:
+            parsed["smoking_last_puff"] = last_puff
+
+        missing_before = missing_compound_fields(question.id, active_answers)
+        numbers = extract_numbers(lowered)
+        if len(numbers) == 1:
+            numeric_missing = [field for field in missing_before if field in {"smoking_years", "smoking_packs_per_day"}]
+            if len(numeric_missing) == 1 and numeric_missing[0] not in parsed:
+                parsed[numeric_missing[0]] = round(numbers[0], 2)
+
+        return parsed
+
+    if question.id == "alcohol_details":
+        years = extract_years_value(lowered)
+        last_drink = extract_time_reference(lowered, keywords=("last drink",))
+
+        if years is not None:
+            parsed["alcohol_years"] = years
+        if last_drink:
+            parsed["alcohol_last_drink"] = last_drink
+
+        missing_before = missing_compound_fields(question.id, active_answers)
+        numbers = extract_numbers(lowered)
+        if len(numbers) == 1 and missing_before == ["alcohol_years"] and "alcohol_years" not in parsed:
+            parsed["alcohol_years"] = round(numbers[0], 2)
+
+        return parsed
+
+    return {}
+
+
+def compound_answer_summary(question_id: str, answers: dict[str, Any]) -> str:
+    if question_id == "smoking_details":
+        return (
+            f"{display_number(answers['smoking_years'])} years, "
+            f"{display_number(answers['smoking_packs_per_day'])} packs per day, "
+            f"last puff: {answers['smoking_last_puff']}"
+        )
+    if question_id == "alcohol_details":
+        return f"{display_number(answers['alcohol_years'])} years, last drink: {answers['alcohol_last_drink']}"
+    return ""
+
+
 def extract_numbers(raw_answer: str) -> list[float]:
     return [float(match) for match in re.findall(r"\d+(?:\.\d+)?", raw_answer)]
+
+
+def display_number(value: float | int) -> str:
+    numeric = float(value)
+    return str(int(numeric)) if numeric.is_integer() else str(round(numeric, 2))
 
 
 def parse_body_metrics(raw_answer: str, answers: dict[str, Any] | None = None) -> dict[str, float]:
@@ -655,6 +817,8 @@ def parse_body_metrics(raw_answer: str, answers: dict[str, Any] | None = None) -
 def render_question_text(question: Question, answers: dict[str, Any] | None = None) -> str:
     if question.id == "body_metrics":
         return body_metrics_followup_text(answers)
+    if question.id in COMPOUND_QUESTION_FIELDS:
+        return compound_followup_text(question.id, answers or {})
     return question.text.strip()
 
 
@@ -673,6 +837,10 @@ def question_to_payload(question: Question, answers: dict[str, Any] | None = Non
     payload["options"] = [asdict(option) for option in question.options]
     payload["text"] = render_question_text(question, answers)
     if question.id == "body_metrics" and answers and (answers.get("weight_kg") is not None or answers.get("height_cm") is not None):
+        payload["helper_text"] = None
+    if question.id in COMPOUND_QUESTION_FIELDS and answers and len(missing_compound_fields(question.id, answers)) < len(
+        COMPOUND_QUESTION_FIELDS[question.id]
+    ):
         payload["helper_text"] = None
     payload["prompt_text"] = format_question_prompt(question, answers)
     return payload
@@ -719,6 +887,8 @@ def parse_answer(question: Question, raw_answer: str, answers: dict[str, Any] | 
         return None
     if question.input_type == "body_metrics":
         return parse_body_metrics(raw_answer, answers)
+    if question.id in COMPOUND_QUESTION_FIELDS:
+        return parse_compound_question(question, raw_answer, answers)
     if question.input_type == "boolean":
         parsed = parse_boolean(raw_answer)
         return parsed if parsed is not None else raw_answer.strip()
@@ -746,12 +916,25 @@ def apply_parsed_answer(question: Question, answers: dict[str, Any], parsed_answ
             answers.pop("body_metrics", None)
         return
 
+    if question.id in COMPOUND_QUESTION_FIELDS:
+        details = parsed_answer if isinstance(parsed_answer, dict) else {}
+        for field_name, value in details.items():
+            if value is not None:
+                answers[field_name] = value
+        if not missing_compound_fields(question.id, answers):
+            answers[question.field] = compound_answer_summary(question.id, answers)
+        else:
+            answers.pop(question.field, None)
+        return
+
     answers[question.field] = parsed_answer
 
 
 def is_question_complete(question: Question, answers: dict[str, Any]) -> bool:
     if question.id == "body_metrics":
         return not body_metrics_missing_fields(answers)
+    if question.id in COMPOUND_QUESTION_FIELDS:
+        return not missing_compound_fields(question.id, answers)
 
     if question.input_type == "boolean":
         return isinstance(answers.get(question.field), bool)
