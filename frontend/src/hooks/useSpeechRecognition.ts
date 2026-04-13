@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-export function useSpeechRecognition() {
+export function useSpeechRecognition(language = 'en-IN') {
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null)
   const acceptResultsRef = useRef(false)
   const [isSupported, setIsSupported] = useState(false)
@@ -47,7 +47,7 @@ export function useSpeechRecognition() {
     const recognition = new Recognition()
     recognition.continuous = false
     recognition.interimResults = true
-    recognition.lang = 'en-IN'
+    recognition.lang = language
 
     recognition.onresult = (event) => {
       if (!acceptResultsRef.current) {
@@ -79,12 +79,13 @@ export function useSpeechRecognition() {
       recognition.stop()
       recognitionRef.current = null
     }
-  }, [])
+  }, [language])
 
   const startListening = () => {
     if (!recognitionRef.current) {
       return
     }
+    recognitionRef.current.lang = language
     acceptResultsRef.current = true
     setTranscript('')
     setError(null)

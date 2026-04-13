@@ -25,9 +25,54 @@ class Question:
     optional: bool = False
 
 
-YES_VALUES = {"yes", "y", "yeah", "yep", "affirmative", "true", "1"}
-NO_VALUES = {"no", "n", "nope", "negative", "false", "0"}
-SKIP_VALUES = {"skip", "not available", "na", "n/a", "don't have it", "do not have it", "unknown"}
+YES_VALUES = {
+    "yes",
+    "y",
+    "yeah",
+    "yep",
+    "affirmative",
+    "true",
+    "1",
+    "ஆம்",
+    "ஆமாம்",
+    "ஆமா",
+    "சரி",
+    "हाँ",
+    "हां",
+    "जी",
+    "हाँ जी",
+}
+NO_VALUES = {
+    "no",
+    "n",
+    "nope",
+    "negative",
+    "false",
+    "0",
+    "இல்லை",
+    "இல்ல",
+    "வேண்டாம்",
+    "नहीं",
+    "नही",
+    "मत",
+    "न",
+}
+SKIP_VALUES = {
+    "skip",
+    "not available",
+    "na",
+    "n/a",
+    "don't have it",
+    "do not have it",
+    "unknown",
+    "தவிர்",
+    "தவிர்க்கவும்",
+    "தெரியாது",
+    "छोड़ें",
+    "छोड़ो",
+    "पता नहीं",
+    "मालूम नहीं",
+}
 
 COMPOUND_QUESTION_FIELDS: dict[str, tuple[str, ...]] = {
     "smoking_details": ("smoking_years", "smoking_packs_per_day", "smoking_last_puff"),

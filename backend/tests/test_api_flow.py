@@ -167,6 +167,13 @@ def test_gender_choice_does_not_map_female_to_male() -> None:
     assert parsed_gender == "female"
 
 
+def test_boolean_answers_support_tamil_and_hindi_yes_and_no() -> None:
+    assert parse_answer(QUESTION_MAP["diabetes"], "ஆம்") is True
+    assert parse_answer(QUESTION_MAP["diabetes"], "இல்லை") is False
+    assert parse_answer(QUESTION_MAP["diabetes"], "हाँ") is True
+    assert parse_answer(QUESTION_MAP["diabetes"], "नहीं") is False
+
+
 def test_compound_habit_questions_reask_only_missing_details() -> None:
     smoking_answers = {"smoking_history": True}
     smoking_question = QUESTION_MAP["smoking_details"]

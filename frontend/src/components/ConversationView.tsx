@@ -1,3 +1,4 @@
+import type { LocalizedQuestion } from '../localization'
 import type { SessionSnapshot } from '../types'
 
 interface ConversationViewProps {
@@ -6,6 +7,27 @@ interface ConversationViewProps {
   error: string | null
   isListening: boolean
   isSpeechSupported: boolean
+  labels: {
+    patientInterview: string
+    patientQuestionnaire: string
+    voicePromptsOn: string
+    voicePromptsOff: string
+    startAssessment: string
+    startNewAssessmentPrompt: string
+    currentPrompt: string
+    capturedResponse: string
+    submitCapturedResponse: string
+    submitResponse: string
+    clear: string
+    saving: string
+    yes: string
+    no: string
+    skip: string
+    typeOrDictate: string
+    speechUnsupported: string
+    policyHelper: string
+  }
+  localizedQuestion: LocalizedQuestion | null
   session: SessionSnapshot | null
   autoSpeak: boolean
   needsCameraExam: boolean
@@ -15,6 +37,7 @@ interface ConversationViewProps {
   onStart: () => void
   onToggleListening: () => void
   onToggleAutoSpeak: () => void
+  translateAiMessage: (message: string) => string
 }
 
 function MicGlyph({ active }: { active: boolean }) {
@@ -43,6 +66,8 @@ export function ConversationView({
   error,
   isListening,
   isSpeechSupported,
+  labels,
+  localizedQuestion,
   session,
   autoSpeak,
   needsCameraExam,
@@ -52,11 +77,12 @@ export function ConversationView({
   onStart,
   onToggleListening,
   onToggleAutoSpeak,
+  translateAiMessage,
 }: ConversationViewProps) {
   const progress = session ? `${session.progress_completed}/${session.progress_total}` : '0/0'
   const isComplete = session?.status === 'completed'
   const currentQuestion = session?.current_question
-  const currentPrompt = [currentQuestion?.text, currentQuestion?.helper_text].filter(Boolean).join('\n')
+  const currentPrompt = [localizedQuestion?.text, localizedQuestion?.helperText].filter(Boolean).join('\n')
   const isBooleanQuestion = currentQuestion?.input_type === 'boolean'
   const isChoiceQuestion = currentQuestion?.input_type === 'choice'
   const usesQuickActions = isBooleanQuestion || isChoiceQuestion
@@ -65,21 +91,21 @@ export function ConversationView({
     <section className="panel panel-conversation">
       <div className="panel-header">
         <div>
-          <p className="eyebrow">Patient Interview</p>
-          <h2>Patient questionnaire</h2>
+          <p className="eyebrow">{labels.patientInterview}</p>
+          <h2>{labels.patientQuestionnaire}</h2>
         </div>
         <button className="ghost-button" type="button" onClick={onToggleAutoSpeak}>
-          {autoSpeak ? 'Voice prompts on' : 'Voice prompts off'}
+          {autoSpeak ? labels.voicePromptsOn : labels.voicePromptsOff}
         </button>
       </div>
 
       {!session ? (
         <div className="empty-state">
           <p>
-            Start a new assessment to begin the patient questionnaire.
+            {labels.startNewAssessmentPrompt}
           </p>
           <button className="primary-button" type="button" onClick={onStart} disabled={busy}>
-            Start assessment
+            {labels.startAssessment}
           </button>
         </div>
       ) : (
@@ -94,7 +120,7 @@ export function ConversationView({
             {session.transcript.map((entry, index) => (
               <article className={`bubble ${entry.speaker}`} key={`${entry.timestamp}-${index}`}>
                 <span className="bubble-speaker">{entry.speaker === 'ai' ? 'Valli' : 'Patient'}</span>
-                <p>{entry.message}</p>
+                <p>{entry.speaker === 'ai' ? translateAiMessage(entry.message) : entry.message}</p>
               </article>
             ))}
           </div>
@@ -102,7 +128,7 @@ export function ConversationView({
           {!isComplete && session.current_question ? (
             <div className="composer">
               <span className="composer-label">
-                Current prompt
+                {labels.currentPrompt}
               </span>
               <div className="current-question">{currentPrompt}</div>
 
@@ -111,14 +137,14 @@ export function ConversationView({
                   {isBooleanQuestion ? (
                     <div className="boolean-grid">
                       <button className="quick-answer-button" type="button" onClick={() => onQuickAnswer('Yes')} disabled={busy}>
-                        Yes
+                        {labels.yes}
                       </button>
                       <button className="quick-answer-button" type="button" onClick={() => onQuickAnswer('No')} disabled={busy}>
-                        No
+                        {labels.no}
                       </button>
                       {currentQuestion?.optional ? (
                         <button className="quick-answer-button subtle" type="button" onClick={() => onQuickAnswer('skip')} disabled={busy}>
-                          Skip
+                          {labels.skip}
                         </button>
                       ) : null}
                     </div>
@@ -126,12 +152,12 @@ export function ConversationView({
 
                   {isChoiceQuestion ? (
                     <div className="choice-stack">
-                      {currentQuestion?.options.map((option) => (
+                      {localizedQuestion?.options.map((option) => (
                         <button
                           className="choice-card"
                           key={option.value}
                           type="button"
-                          onClick={() => onQuickAnswer(option.label)}
+                          onClick={() => onQuickAnswer(option.canonicalLabel)}
                           disabled={busy}
                         >
                           {option.label}
@@ -142,14 +168,14 @@ export function ConversationView({
 
                   {draftAnswer.trim() ? (
                     <div className="voice-preview">
-                      <span className="composer-label">Captured response</span>
+                      <span className="composer-label">{labels.capturedResponse}</span>
                       <p>{draftAnswer}</p>
                       <div className="composer-actions">
                         <button className="primary-button" type="button" onClick={() => onSubmit()} disabled={busy}>
-                          {busy ? 'Saving...' : 'Submit captured response'}
+                          {busy ? labels.saving : labels.submitCapturedResponse}
                         </button>
                         <button className="ghost-button" type="button" onClick={() => onDraftChange('')} disabled={busy}>
-                          Clear
+                          {labels.clear}
                         </button>
                       </div>
                     </div>
@@ -174,17 +200,17 @@ export function ConversationView({
                     id="answer-box"
                     value={draftAnswer}
                     onChange={(event) => onDraftChange(event.target.value)}
-                    placeholder="Type or dictate the patient's exact response here..."
+                    placeholder={labels.typeOrDictate}
                     rows={5}
                   />
 
                   <div className="composer-actions">
                     <button className="primary-button" type="button" onClick={() => onSubmit()} disabled={busy || !draftAnswer.trim()}>
-                      {busy ? 'Saving...' : 'Submit response'}
+                      {busy ? labels.saving : labels.submitResponse}
                     </button>
                     {currentQuestion?.optional ? (
                       <button className="ghost-button" type="button" onClick={() => onQuickAnswer('skip')} disabled={busy}>
-                        Skip
+                        {labels.skip}
                       </button>
                     ) : null}
                     <button
@@ -201,10 +227,9 @@ export function ConversationView({
                 </>
               )}
 
-              {!isSpeechSupported ? <p className="helper-text">Speech recognition is not supported in this browser.</p> : null}
+              {!isSpeechSupported ? <p className="helper-text">{labels.speechUnsupported}</p> : null}
               <p className="helper-text">
-                You can also ask hospital-policy questions here, such as fasting or ride-home planning. The assistant will answer
-                from the configured policy knowledge base and keep the assessment on track.
+                {labels.policyHelper}
               </p>
             </div>
           ) : (

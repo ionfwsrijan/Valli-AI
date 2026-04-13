@@ -13,6 +13,14 @@ import { ConversationView } from "./components/ConversationView";
 import { DashboardView } from "./components/DashboardView";
 import { ReportView } from "./components/ReportView";
 import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
+import {
+  type AppLanguage,
+  localizeQuestion,
+  normalizeAnswerForSubmission,
+  speechLocale,
+  translateText,
+  uiText,
+} from "./localization";
 import type {
   AssessmentView,
   DashboardItem,
@@ -22,7 +30,7 @@ import type {
 
 const GREETING_MESSAGE =
   "Hello! I am Valli. You may use text or voice for taking the assessment.";
-const SPEECH_RATE = 1.0;
+const SPEECH_RATE = 1.55;
 const SPEECH_PITCH = 1.02;
 const FEMININE_VOICE_HINTS = [
   "heera",
@@ -39,10 +47,32 @@ function isEnglishVoice(voice: SpeechSynthesisVoice) {
   return voice.lang.toLowerCase().startsWith("en");
 }
 
+function isTamilVoice(voice: SpeechSynthesisVoice) {
+  return voice.lang.toLowerCase().startsWith("ta");
+}
+
+function isHindiVoice(voice: SpeechSynthesisVoice) {
+  return voice.lang.toLowerCase().startsWith("hi");
+}
+
 function isIndianEnglishVoice(voice: SpeechSynthesisVoice) {
   return (
     voice.lang.toLowerCase().startsWith("en-in") ||
     voice.name.toLowerCase().includes("india")
+  );
+}
+
+function isTamilIndianVoice(voice: SpeechSynthesisVoice) {
+  return (
+    voice.lang.toLowerCase().startsWith("ta-in") ||
+    voice.name.toLowerCase().includes("tamil")
+  );
+}
+
+function isHindiIndianVoice(voice: SpeechSynthesisVoice) {
+  return (
+    voice.lang.toLowerCase().startsWith("hi-in") ||
+    voice.name.toLowerCase().includes("hindi")
   );
 }
 
@@ -51,7 +81,42 @@ function hasFeminineHint(voice: SpeechSynthesisVoice) {
   return FEMININE_VOICE_HINTS.some((hint) => haystack.includes(hint));
 }
 
-function pickPreferredValliVoice(voices: SpeechSynthesisVoice[]) {
+function pickPreferredValliVoice(
+  voices: SpeechSynthesisVoice[],
+  language: AppLanguage,
+) {
+  if (language === "ta") {
+    return (
+      voices.find(
+        (voice) => hasFeminineHint(voice) && isTamilIndianVoice(voice),
+      ) ??
+      voices.find((voice) => hasFeminineHint(voice) && isTamilVoice(voice)) ??
+      voices.find((voice) => isTamilIndianVoice(voice)) ??
+      voices.find((voice) => isTamilVoice(voice)) ??
+      voices.find(
+        (voice) => hasFeminineHint(voice) && isIndianEnglishVoice(voice),
+      ) ??
+      voices.find((voice) => isIndianEnglishVoice(voice)) ??
+      null
+    );
+  }
+
+  if (language === "hi") {
+    return (
+      voices.find(
+        (voice) => hasFeminineHint(voice) && isHindiIndianVoice(voice),
+      ) ??
+      voices.find((voice) => hasFeminineHint(voice) && isHindiVoice(voice)) ??
+      voices.find((voice) => isHindiIndianVoice(voice)) ??
+      voices.find((voice) => isHindiVoice(voice)) ??
+      voices.find(
+        (voice) => hasFeminineHint(voice) && isIndianEnglishVoice(voice),
+      ) ??
+      voices.find((voice) => isIndianEnglishVoice(voice)) ??
+      null
+    );
+  }
+
   return (
     voices.find(
       (voice) => hasFeminineHint(voice) && isIndianEnglishVoice(voice),
@@ -66,6 +131,16 @@ function pickPreferredValliVoice(voices: SpeechSynthesisVoice[]) {
 
 export default function App() {
   const [view, setView] = useState<AssessmentView>("home");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [language, setLanguage] = useState<AppLanguage>(() => {
+    if (typeof window === "undefined") {
+      return "en";
+    }
+    const savedLanguage = window.localStorage.getItem("valli-language");
+    return savedLanguage === "ta" || savedLanguage === "hi"
+      ? savedLanguage
+      : "en";
+  });
   const [session, setSession] = useState<SessionSnapshot | null>(null);
   const [report, setReport] = useState<SessionReport | null>(null);
   const [dashboard, setDashboard] = useState<DashboardItem[]>([]);
@@ -79,15 +154,27 @@ export default function App() {
     SpeechSynthesisVoice[]
   >([]);
 
-  const speech = useSpeechRecognition();
+  const speech = useSpeechRecognition(speechLocale(language));
+  const labels = uiText(language);
 
   const getQuestionPrompt = (question: SessionSnapshot["current_question"]) =>
     question?.prompt_text ?? question?.text ?? "";
   const currentQuestionId = session?.current_question?.id ?? null;
+  const localizedCurrentQuestion = localizeQuestion(
+    session?.current_question ?? null,
+    language,
+  );
 
   useEffect(() => {
     void refreshDashboard();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem("valli-language", language);
+  }, [language]);
 
   useEffect(() => {
     if (!("speechSynthesis" in window)) {
@@ -123,6 +210,23 @@ export default function App() {
     speech.stopListening();
   }, [currentQuestionId]);
 
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const { body } = document;
+    const previousOverflow = body.style.overflow;
+
+    if (mobileMenuOpen) {
+      body.style.overflow = "hidden";
+    }
+
+    return () => {
+      body.style.overflow = previousOverflow;
+    };
+  }, [mobileMenuOpen]);
+
   const refreshDashboard = async () => {
     try {
       const items = await fetchSessions();
@@ -150,7 +254,9 @@ export default function App() {
       return;
     }
 
-    const lines = messages.map((message) => message.trim()).filter(Boolean);
+    const lines = messages
+      .map((message) => translateText(message.trim(), language))
+      .filter(Boolean);
     if (!lines.length) {
       return;
     }
@@ -158,6 +264,7 @@ export default function App() {
     const synth = window.speechSynthesis;
     const selectedVoice = pickPreferredValliVoice(
       availableVoices.length ? availableVoices : synth.getVoices(),
+      language,
     );
 
     synth.cancel();
@@ -167,7 +274,7 @@ export default function App() {
         utterance.voice = selectedVoice;
         utterance.lang = selectedVoice.lang;
       } else {
-        utterance.lang = "en-IN";
+        utterance.lang = speechLocale(language);
       }
       utterance.rate = SPEECH_RATE;
       utterance.pitch = SPEECH_PITCH;
@@ -176,6 +283,7 @@ export default function App() {
   };
 
   const startAssessment = async () => {
+    setMobileMenuOpen(false);
     setBusy(true);
     setError(null);
     setVisionError(null);
@@ -187,10 +295,7 @@ export default function App() {
     try {
       const created = await createSession();
       setSession(created);
-      speakEntries([
-        GREETING_MESSAGE,
-        getQuestionPrompt(created.current_question),
-      ]);
+      speakEntries([GREETING_MESSAGE, getQuestionPrompt(created.current_question)]);
       await refreshDashboard();
     } catch (requestError) {
       setError(
@@ -204,7 +309,11 @@ export default function App() {
   };
 
   const handleSubmit = async (overrideAnswer?: string) => {
-    const answerText = (overrideAnswer ?? draftAnswer).trim();
+    const answerText = normalizeAnswerForSubmission(
+      session?.current_question ?? null,
+      overrideAnswer ?? draftAnswer,
+      language,
+    ).trim();
     if (!session || !answerText) {
       return;
     }
@@ -214,7 +323,10 @@ export default function App() {
     setError(null);
 
     try {
-      const updated = await submitAnswer(session.session_id, answerText);
+      const updated = await submitAnswer(
+        session.session_id,
+        answerText,
+      );
       setSession(updated);
       setDraftAnswer("");
       speech.resetTranscript();
@@ -280,6 +392,7 @@ export default function App() {
   };
 
   const openReportForSession = async (sessionId: string) => {
+    setMobileMenuOpen(false);
     setBusy(true);
     setError(null);
 
@@ -342,6 +455,24 @@ export default function App() {
   return (
     <main className="app-shell">
       <section className="toolbar">
+        <div className="mobile-toolbar">
+          <div className="mobile-brand-block">
+            <span className="eyebrow">Valli</span>
+            <strong className="mobile-brand-title">Assessment</strong>
+          </div>
+          <button
+            aria-expanded={mobileMenuOpen}
+            aria-label="Open navigation menu"
+            className="mobile-menu-button"
+            type="button"
+            onClick={() => setMobileMenuOpen((current) => !current)}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+        </div>
+
         <div className="nav-pills">
           {navOptions.map((option) => (
             <button
@@ -355,30 +486,124 @@ export default function App() {
               type="button"
               onClick={() => setView(option.id)}
             >
-              {option.label}
+              {option.id === "home"
+                ? labels.home
+                : option.id === "assessment"
+                  ? labels.assessment
+                  : option.id === "report"
+                    ? labels.report
+                    : labels.records}
             </button>
           ))}
         </div>
 
         <div className="toolbar-actions">
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={refreshDashboard}
-            disabled={busy}
-          >
-            Sync sessions
-          </button>
+          <label className="language-toggle" htmlFor="language-select">
+            <span className="language-label">{labels.language}</span>
+            <select
+              className="language-select"
+              id="language-select"
+              value={language}
+              onChange={(event) => setLanguage(event.target.value as AppLanguage)}
+            >
+              <option value="en">{labels.english}</option>
+              <option value="ta">{labels.tamil}</option>
+              <option value="hi">{labels.hindi}</option>
+            </select>
+          </label>
           <button
             className="primary-button"
             type="button"
             onClick={startAssessment}
             disabled={busy}
           >
-            New assessment
+            {labels.newAssessment}
           </button>
         </div>
       </section>
+
+      {mobileMenuOpen ? (
+        <div
+          className="mobile-drawer-backdrop"
+          role="presentation"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          <aside
+            aria-label="Mobile navigation"
+            className="mobile-drawer"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mobile-drawer-head">
+              <div>
+                <span className="eyebrow">Valli</span>
+                <h2>Navigation</h2>
+              </div>
+              <button
+                aria-label="Close navigation menu"
+                className="mobile-drawer-close"
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mobile-drawer-section mobile-drawer-nav">
+              {navOptions.map((option) => (
+                <button
+                  className={
+                    view === option.id ||
+                    (view === "camera" && option.id === "assessment")
+                      ? "nav-pill active"
+                      : "nav-pill"
+                  }
+                  key={`mobile-${option.id}`}
+                  type="button"
+                  onClick={() => {
+                    setView(option.id);
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  {option.id === "home"
+                    ? labels.home
+                    : option.id === "assessment"
+                      ? labels.assessment
+                      : option.id === "report"
+                        ? labels.report
+                        : labels.records}
+                </button>
+              ))}
+            </div>
+
+            <div className="mobile-drawer-section">
+              <label className="language-toggle" htmlFor="mobile-language-select">
+                <span className="language-label">{labels.language}</span>
+                <select
+                  className="language-select"
+                  id="mobile-language-select"
+                  value={language}
+                  onChange={(event) => setLanguage(event.target.value as AppLanguage)}
+                >
+                  <option value="en">{labels.english}</option>
+                  <option value="ta">{labels.tamil}</option>
+                  <option value="hi">{labels.hindi}</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="mobile-drawer-section">
+              <button
+                className="primary-button mobile-drawer-button"
+                type="button"
+                onClick={startAssessment}
+                disabled={busy}
+              >
+                {labels.newAssessment}
+              </button>
+            </div>
+          </aside>
+        </div>
+      ) : null}
 
       {view === "home" ? (
         <section className="hero-shell">
@@ -402,14 +627,14 @@ export default function App() {
                 onClick={startAssessment}
                 disabled={busy}
               >
-                Launch new assessment
+                {labels.launchNewAssessment}
               </button>
               <button
                 className="ghost-button hero-ghost"
                 type="button"
                 onClick={() => setView("records")}
               >
-                Open records
+                {labels.openRecords}
               </button>
             </div>
             <div className="hero-metrics">
@@ -538,6 +763,8 @@ export default function App() {
               error={error || speech.error}
               isListening={speech.isListening}
               isSpeechSupported={speech.isSupported}
+              labels={labels}
+              localizedQuestion={localizedCurrentQuestion}
               needsCameraExam={needsCameraExam}
               session={session}
               onDraftChange={setDraftAnswer}
@@ -546,6 +773,7 @@ export default function App() {
               onSubmit={handleSubmit}
               onToggleAutoSpeak={handleToggleAutoSpeak}
               onToggleListening={toggleListening}
+              translateAiMessage={(message) => translateText(message, language)}
             />
           </section>
         </section>
