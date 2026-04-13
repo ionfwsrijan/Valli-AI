@@ -457,8 +457,7 @@ export default function App() {
       <section className="toolbar">
         <div className="mobile-toolbar">
           <div className="mobile-brand-block">
-            <span className="eyebrow">Valli</span>
-            <strong className="mobile-brand-title">Assessment</strong>
+            <strong className="mobile-brand-title">Valli AI</strong>
           </div>
           <button
             aria-expanded={mobileMenuOpen}
@@ -534,10 +533,7 @@ export default function App() {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mobile-drawer-head">
-              <div>
-                <span className="eyebrow">Valli</span>
-                <h2>Navigation</h2>
-              </div>
+              <h2>Navigation</h2>
               <button
                 aria-label="Close navigation menu"
                 className="mobile-drawer-close"

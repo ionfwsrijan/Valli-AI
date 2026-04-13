@@ -472,12 +472,15 @@ textarea {
 
 .mobile-brand-block {
   display: grid;
-  gap: 4px;
 }
 
 .mobile-brand-title {
   color: #ffffff;
-  font-size: 1.05rem;
+  font-family: Baskerville, "Times New Roman", Georgia, serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
 }
 
 .mobile-menu-button,
@@ -1420,6 +1423,10 @@ textarea {
   .hero-kicker-row,
   .hero-actions {
     align-items: stretch;
+  }
+
+  .hero-kicker-row .eyebrow {
+    display: none;
   }
 
   .hero-metrics,
