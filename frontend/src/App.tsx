@@ -22,7 +22,7 @@ import type {
 
 const GREETING_MESSAGE =
   "Hello! I am Valli. You may use text or voice for taking the assessment.";
-const SPEECH_RATE = 1.2;
+const SPEECH_RATE = 1.0;
 const SPEECH_PITCH = 1.02;
 const FEMININE_VOICE_HINTS = [
   "heera",
