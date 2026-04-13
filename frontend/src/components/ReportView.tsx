@@ -16,6 +16,14 @@ function displayValue(value: unknown) {
   return String(value)
 }
 
+function displayGender(value: unknown) {
+  const text = displayValue(value)
+  if (text === 'Not provided') {
+    return text
+  }
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
 function formatTimestamp(value: string) {
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) {
@@ -146,7 +154,7 @@ export function ReportView({ report, onPrintReport, onPrintTranscript }: ReportV
 
   const patientCards: Array<[string, unknown]> = [
     ['Age', report.patient_summary.age],
-    ['Gender', report.patient_summary.sex],
+    ['Gender', displayGender(report.patient_summary.sex)],
     ['History From', report.patient_summary.history_source],
     ['Diagnosis', report.patient_summary.preoperative_diagnosis],
     ['Procedure', report.patient_summary.proposed_procedure],

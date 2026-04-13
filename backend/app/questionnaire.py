@@ -874,10 +874,28 @@ def parse_numeric(raw_answer: str, integer_only: bool = False) -> int | float | 
 
 def parse_choice(question: Question, raw_answer: str) -> str:
     normalized = raw_answer.strip().lower()
+    normalized_compact = re.sub(r"[^a-z0-9]+", " ", normalized).strip()
     for option in question.options:
-        if normalized == option.value.lower() or normalized == option.label.lower():
+        option_value = option.value.lower()
+        option_label = option.label.lower()
+        option_value_compact = re.sub(r"[^a-z0-9]+", " ", option_value).strip()
+        option_label_compact = re.sub(r"[^a-z0-9]+", " ", option_label).strip()
+
+        if normalized == option_value or normalized == option_label:
             return option.value
-        if option.value.lower() in normalized or option.label.lower() in normalized:
+        if normalized_compact == option_value_compact or normalized_compact == option_label_compact:
+            return option.value
+        if option_value_compact and (
+            normalized_compact.startswith(option_value_compact) or option_value_compact.startswith(normalized_compact)
+        ):
+            return option.value
+        if option_label_compact and (
+            normalized_compact.startswith(option_label_compact) or option_label_compact.startswith(normalized_compact)
+        ):
+            return option.value
+        if option_value_compact and re.search(rf"(?<!\w){re.escape(option_value_compact)}(?!\w)", normalized_compact):
+            return option.value
+        if option_label_compact and re.search(rf"(?<!\w){re.escape(option_label_compact)}(?!\w)", normalized_compact):
             return option.value
     return raw_answer.strip()
 

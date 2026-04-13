@@ -162,6 +162,11 @@ def test_choice_answers_do_not_trigger_policy_routing() -> None:
     assert mmrc_result["parsed_answer"] == "2"
 
 
+def test_gender_choice_does_not_map_female_to_male() -> None:
+    parsed_gender = parse_answer(QUESTION_MAP["patient_sex"], "Female")
+    assert parsed_gender == "female"
+
+
 def test_compound_habit_questions_reask_only_missing_details() -> None:
     smoking_answers = {"smoking_history": True}
     smoking_question = QUESTION_MAP["smoking_details"]
