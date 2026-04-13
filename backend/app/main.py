@@ -19,6 +19,7 @@ from .questionnaire import (
     QUESTION_MAP,
     apply_parsed_answer,
     format_question_prompt,
+    invalid_answer_message,
     is_question_complete,
     next_question,
     question_to_payload,
@@ -253,6 +254,9 @@ def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends
 
     if routing["mode"] in {"answer_only", "mixed"}:
         if not is_question_complete(current, answers):
+            correction = invalid_answer_message(current, routing["answer_text"] or payload.answer_text, routing["parsed_answer"])
+            if correction:
+                transcript.append(transcript_entry("ai", correction, current.id))
             transcript.append(transcript_entry("ai", format_question_prompt(current, answers)))
             assessment.current_question_id = current.id
             assessment.status = "in_progress"

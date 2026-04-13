@@ -144,6 +144,35 @@ def test_optional_ids_can_be_skipped_and_body_metrics_follow_up_until_complete()
         assert session["current_question"]["id"] == "preoperative_diagnosis"
 
 
+def test_invalid_numeric_answer_keeps_same_question_and_reasks() -> None:
+    with TestClient(app) as client:
+        session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
+        session_id = session["session_id"]
+
+        session = client.post(
+            f"/api/sessions/{session_id}/answer",
+            json={"answer_text": "Jane Example"},
+        ).json()
+        assert session["current_question"]["id"] == "patient_age"
+
+        session = client.post(
+            f"/api/sessions/{session_id}/answer",
+            json={"answer_text": "M"},
+        ).json()
+
+        assert session["current_question"]["id"] == "patient_age"
+        assert session["answers"].get("patient_age") is None
+        assert session["transcript"][-2]["message"] == "I need your age as a number in years. For example, 42."
+        assert session["transcript"][-1]["message"] == "What is your age?"
+
+        session = client.post(
+            f"/api/sessions/{session_id}/answer",
+            json={"answer_text": "I am 29 years old"},
+        ).json()
+        assert session["answers"]["patient_age"] == 29
+        assert session["current_question"]["id"] == "patient_sex"
+
+
 def test_choice_answers_do_not_trigger_policy_routing() -> None:
     nyha_result = classify_input(
         QUESTION_MAP["nyha_class"],
@@ -172,6 +201,23 @@ def test_boolean_answers_support_tamil_and_hindi_yes_and_no() -> None:
     assert parse_answer(QUESTION_MAP["diabetes"], "இல்லை") is False
     assert parse_answer(QUESTION_MAP["diabetes"], "हाँ") is True
     assert parse_answer(QUESTION_MAP["diabetes"], "नहीं") is False
+
+
+def test_numeric_duration_questions_reject_non_numeric_text() -> None:
+    duration_question = QUESTION_MAP["diabetes_duration_years"]
+    answers: dict[str, object] = {"diabetes": True}
+
+    parsed_duration = parse_answer(duration_question, "Prednisone")
+    apply_parsed_answer(duration_question, answers, parsed_duration)
+
+    assert not is_question_complete(duration_question, answers)
+    assert answers.get("diabetes_duration_years") is None
+
+    parsed_duration = parse_answer(duration_question, "for 5 years")
+    apply_parsed_answer(duration_question, answers, parsed_duration)
+
+    assert answers["diabetes_duration_years"] == 5
+    assert is_question_complete(duration_question, answers)
 
 
 def test_compound_habit_questions_reask_only_missing_details() -> None:

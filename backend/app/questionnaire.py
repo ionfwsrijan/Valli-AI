@@ -821,6 +821,85 @@ def display_number(value: float | int) -> str:
     return str(int(numeric)) if numeric.is_integer() else str(round(numeric, 2))
 
 
+NUMERIC_FILLER_WORDS = {
+    "i",
+    "im",
+    "m",
+    "am",
+    "my",
+    "it",
+    "is",
+    "was",
+    "were",
+    "have",
+    "has",
+    "had",
+    "been",
+    "for",
+    "since",
+    "about",
+    "around",
+    "approximately",
+    "approx",
+    "roughly",
+    "only",
+    "just",
+    "number",
+    "no",
+    "the",
+    "of",
+    "this",
+    "that",
+    "there",
+    "are",
+    "were",
+}
+
+
+def numeric_question_rules(question: Question) -> tuple[set[str], float | None, float | None]:
+    allowed_words = set(NUMERIC_FILLER_WORDS)
+    min_value: float | None = None
+    max_value: float | None = None
+    lowered_text = question.text.lower()
+
+    if question.id == "patient_age":
+        allowed_words.update({"age", "aged", "old", "year", "years", "yr", "yrs"})
+        min_value = 0
+        max_value = 120
+    elif question.id == "previous_surgery_year":
+        allowed_words.update({"year", "years", "in"})
+        min_value = 1900
+        max_value = 2100
+    elif question.field.endswith("_duration_years"):
+        allowed_words.update({"year", "years", "yr", "yrs", "past"})
+        min_value = 0
+        max_value = 120
+    elif question.field.endswith("_days") or "how many days" in lowered_text or "number of days" in lowered_text:
+        allowed_words.update({"day", "days"})
+        min_value = 0
+        max_value = 3650
+    elif question.field == "dialysis_cycles":
+        allowed_words.update({"cycle", "cycles", "session", "sessions", "time", "times"})
+        min_value = 0
+        max_value = 10000
+
+    return allowed_words, min_value, max_value
+
+
+def numeric_validation_message(question: Question) -> str:
+    if question.id == "patient_age":
+        return "I need your age as a number in years. For example, 42."
+    if question.id == "previous_surgery_year":
+        return "I need the year as a 4-digit number. For example, 2020."
+    if question.field.endswith("_duration_years"):
+        return "I need the number of years only. For example, 5 or 5 years."
+    if question.field.endswith("_days") or "how many days" in question.text.lower() or "number of days" in question.text.lower():
+        return "I need the number of days only. For example, 3."
+    if question.field == "dialysis_cycles":
+        return "I need the number of dialysis cycles only. For example, 4."
+    return "I need a number for this answer."
+
+
 def parse_body_metrics(raw_answer: str, answers: dict[str, Any] | None = None) -> dict[str, float]:
     lowered = raw_answer.strip().lower()
     active_answers = answers or {}
@@ -906,15 +985,44 @@ def parse_boolean(raw_answer: str) -> bool | None:
 
 def parse_numeric(raw_answer: str, integer_only: bool = False) -> int | float | None:
     cleaned = raw_answer.strip().lower()
-    cleaned = cleaned.replace("years", "").replace("year", "").replace("kg", "").replace("cm", "")
-    cleaned = cleaned.replace("hours", "").replace("hour", "").replace("packs", "").replace("pack", "").strip()
-    try:
-        value = float(cleaned)
-    except ValueError:
+    numbers = extract_numbers(cleaned)
+    if len(numbers) != 1:
         return None
+    value = numbers[0]
     if integer_only:
         return int(round(value))
     return round(value, 2)
+
+
+def parse_numeric_question(question: Question, raw_answer: str) -> int | float | None:
+    cleaned = raw_answer.strip().lower()
+    allowed_words, min_value, max_value = numeric_question_rules(question)
+    words = re.findall(r"[a-z]+", cleaned)
+
+    if any(word not in allowed_words for word in words):
+        return None
+
+    parsed = parse_numeric(cleaned, integer_only=question.input_type == "integer")
+    if parsed is None:
+        return None
+
+    value = float(parsed)
+    if min_value is not None and value < min_value:
+        return None
+    if max_value is not None and value > max_value:
+        return None
+    return parsed
+
+
+def invalid_answer_message(question: Question, raw_answer: str, parsed_answer: Any) -> str | None:
+    cleaned = raw_answer.strip()
+    if not cleaned:
+        return None
+    if question.input_type in {"integer", "number"} and parsed_answer is None:
+        return numeric_validation_message(question)
+    if question.input_type == "body_metrics" and isinstance(parsed_answer, dict) and not parsed_answer:
+        return "I need your weight and height as numbers. For example, 68 kg and 162 cm."
+    return None
 
 
 def parse_choice(question: Question, raw_answer: str) -> str:
@@ -956,11 +1064,9 @@ def parse_answer(question: Question, raw_answer: str, answers: dict[str, Any] | 
         parsed = parse_boolean(raw_answer)
         return parsed if parsed is not None else raw_answer.strip()
     if question.input_type == "integer":
-        parsed = parse_numeric(raw_answer, integer_only=True)
-        return parsed if parsed is not None else raw_answer.strip()
+        return parse_numeric_question(question, raw_answer)
     if question.input_type == "number":
-        parsed = parse_numeric(raw_answer)
-        return parsed if parsed is not None else raw_answer.strip()
+        return parse_numeric_question(question, raw_answer)
     if question.input_type == "choice":
         return parse_choice(question, raw_answer)
     return raw_answer.strip()
@@ -1004,7 +1110,8 @@ def is_question_complete(question: Question, answers: dict[str, Any]) -> bool:
     if question.input_type == "choice":
         return answers.get(question.field) in {option.value for option in question.options}
     if question.input_type in {"integer", "number"}:
-        return answers.get(question.field) is not None
+        value = answers.get(question.field)
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
 
     return question.field in answers
 
