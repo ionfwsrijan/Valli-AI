@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+env/
+backend/.coverage
+backend/htmlcov/
+data/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
