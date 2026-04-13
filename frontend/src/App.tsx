@@ -30,7 +30,7 @@ import type {
 
 const GREETING_MESSAGE =
   "Hello! I am Valli. You may use text or voice for taking the assessment.";
-const SPEECH_RATE = 1.55;
+const SPEECH_RATE = 1.0;
 const SPEECH_PITCH = 1.02;
 const FEMININE_VOICE_HINTS = [
   "heera",
@@ -295,7 +295,10 @@ export default function App() {
     try {
       const created = await createSession();
       setSession(created);
-      speakEntries([GREETING_MESSAGE, getQuestionPrompt(created.current_question)]);
+      speakEntries([
+        GREETING_MESSAGE,
+        getQuestionPrompt(created.current_question),
+      ]);
       await refreshDashboard();
     } catch (requestError) {
       setError(
@@ -323,10 +326,7 @@ export default function App() {
     setError(null);
 
     try {
-      const updated = await submitAnswer(
-        session.session_id,
-        answerText,
-      );
+      const updated = await submitAnswer(session.session_id, answerText);
       setSession(updated);
       setDraftAnswer("");
       speech.resetTranscript();
@@ -503,7 +503,9 @@ export default function App() {
               className="language-select"
               id="language-select"
               value={language}
-              onChange={(event) => setLanguage(event.target.value as AppLanguage)}
+              onChange={(event) =>
+                setLanguage(event.target.value as AppLanguage)
+              }
             >
               <option value="en">{labels.english}</option>
               <option value="ta">{labels.tamil}</option>
@@ -572,13 +574,18 @@ export default function App() {
             </div>
 
             <div className="mobile-drawer-section">
-              <label className="language-toggle" htmlFor="mobile-language-select">
+              <label
+                className="language-toggle"
+                htmlFor="mobile-language-select"
+              >
                 <span className="language-label">{labels.language}</span>
                 <select
                   className="language-select"
                   id="mobile-language-select"
                   value={language}
-                  onChange={(event) => setLanguage(event.target.value as AppLanguage)}
+                  onChange={(event) =>
+                    setLanguage(event.target.value as AppLanguage)
+                  }
                 >
                   <option value="en">{labels.english}</option>
                   <option value="ta">{labels.tamil}</option>
