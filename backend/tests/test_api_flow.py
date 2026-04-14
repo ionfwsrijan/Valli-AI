@@ -133,7 +133,9 @@ def test_mixed_answer_and_policy_question_keeps_assessment_on_track() -> None:
         assert payload["current_question"]["text"] == "What's your gender?"
         assert payload["current_question"]["prompt_text"] == "What's your gender?\nMale\nFemale\nOther"
         assert payload["transcript"][-1]["message"] == "What's your gender?\nMale\nFemale\nOther"
-        assert any("Hospital policy guidance:" in item["message"] for item in payload["transcript"])
+        fasting_messages = [item["message"] for item in payload["transcript"] if "Hospital policy guidance:" in item["message"]]
+        assert fasting_messages
+        assert all("Source:" not in message for message in fasting_messages)
 
 
 def test_optional_ids_can_be_skipped_and_body_metrics_follow_up_until_complete() -> None:

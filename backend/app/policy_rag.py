@@ -341,6 +341,10 @@ def build_contextual_answer(query: str, snippets: list[PolicyChunk]) -> str:
     return first_sentence(primary.content)
 
 
+def should_hide_policy_sources(query: str) -> bool:
+    return contains_any(query.lower(), FASTING_KEYWORDS)
+
+
 def off_topic_redirect_answer(*, answer_recorded: bool = False) -> str:
     prefix = "I have recorded your answer. " if answer_recorded else ""
     return (

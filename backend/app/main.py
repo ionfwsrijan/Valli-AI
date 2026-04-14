@@ -14,7 +14,7 @@ from sqlmodel import Session, select
 from .conversation_router import classify_input
 from .database import create_db_and_tables, get_session
 from .models import AssessmentSession
-from .policy_rag import retrieve_policy_answer
+from .policy_rag import retrieve_policy_answer, should_hide_policy_sources
 from .questionnaire import (
     QUESTION_MAP,
     apply_parsed_answer,
@@ -249,7 +249,9 @@ def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends
 
     if routing["policy_question"]:
         policy = retrieve_policy_answer(routing["policy_question"])
-        source_text = f" Source: {', '.join(policy['sources'])}." if policy["sources"] else ""
+        source_text = ""
+        if policy["sources"] and not should_hide_policy_sources(routing["policy_question"]):
+            source_text = f" Source: {', '.join(policy['sources'])}."
         transcript.append(transcript_entry("ai", f"Hospital policy guidance: {policy['answer']}{source_text}"))
     elif routing.get("interjection_message"):
         transcript.append(transcript_entry("ai", routing["interjection_message"]))
