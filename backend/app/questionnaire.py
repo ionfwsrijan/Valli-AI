@@ -158,6 +158,18 @@ def illness_questions(
 
 
 PATIENT_IDENTITY_QUESTIONS = [
+    Question(
+        "history_source",
+        "history_source",
+        "History taken from:",
+        "Patient Details",
+        "choice",
+        options=[
+            QuestionOption("patient", "Patient"),
+            QuestionOption("relative_guardian", "Relative/Guardian"),
+            QuestionOption("medical_records", "Medical Records"),
+        ],
+    ),
     Question("patient_name", "patient_name", "What is your name?", "Patient Details"),
     Question("patient_age", "patient_age", "What is your age?", "Patient Details", "integer", "For example, 42"),
     Question(
@@ -198,18 +210,6 @@ PATIENT_IDENTITY_QUESTIONS = [
     ),
     Question("preoperative_diagnosis", "preoperative_diagnosis", "What is the pre-operative diagnosis?", "Patient Details"),
     Question("proposed_procedure", "proposed_procedure", "What is the proposed procedure?", "Patient Details"),
-    Question(
-        "history_source",
-        "history_source",
-        "History taken from:",
-        "Patient Details",
-        "choice",
-        options=[
-            QuestionOption("patient", "Patient"),
-            QuestionOption("relative_guardian", "Relative/Guardian"),
-            QuestionOption("medical_records", "Medical Records"),
-        ],
-    ),
 ]
 
 
@@ -657,6 +657,7 @@ QUESTION_FLOW: list[Question] = [
 
 
 QUESTION_MAP = {question.id: question for question in QUESTION_FLOW}
+PROXY_HISTORY_SOURCES = {"relative_guardian", "medical_records"}
 
 
 def is_skip_answer(raw_answer: str) -> bool:
@@ -940,10 +941,40 @@ def parse_body_metrics(raw_answer: str, answers: dict[str, Any] | None = None) -
 
 def render_question_text(question: Question, answers: dict[str, Any] | None = None) -> str:
     if question.id == "body_metrics":
-        return body_metrics_followup_text(answers)
-    if question.id in COMPOUND_QUESTION_FIELDS:
-        return compound_followup_text(question.id, answers or {})
-    return question.text.strip()
+        text = body_metrics_followup_text(answers)
+    elif question.id in COMPOUND_QUESTION_FIELDS:
+        text = compound_followup_text(question.id, answers or {})
+    else:
+        text = question.text.strip()
+
+    active_answers = answers or {}
+    if active_answers.get("history_source") not in PROXY_HISTORY_SOURCES:
+        return text
+
+    identity_overrides = {
+        "patient_name": "What's the patient's name?",
+        "patient_age": "What's the patient's age?",
+        "patient_sex": "What's the patient's gender?",
+        "uhid_no": "What is the patient's UHID number?",
+        "ip_no": "What is the patient's IP number?",
+    }
+    if question.id in identity_overrides:
+        return identity_overrides[question.id]
+
+    body_metrics_overrides = {
+        "Please tell me both your weight in kilograms and your height in centimeters.":
+            "Please tell me both the patient's weight in kilograms and height in centimeters.",
+        "Thank you. I still need your weight in kilograms.":
+            "Thank you. I still need the patient's weight in kilograms.",
+        "Thank you. I still need your height in centimeters.":
+            "Thank you. I still need the patient's height in centimeters.",
+        "Thank you. I still need both your weight in kilograms and your height in centimeters.":
+            "Thank you. I still need both the patient's weight in kilograms and height in centimeters.",
+    }
+    if question.id == "body_metrics":
+        return body_metrics_overrides.get(text, text)
+
+    return text
 
 
 def format_question_prompt(question: Question, answers: dict[str, Any] | None = None) -> str:

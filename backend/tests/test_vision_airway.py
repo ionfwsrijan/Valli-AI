@@ -62,9 +62,10 @@ def test_airway_vision_capture_updates_session_and_completes_after_both_views() 
     with TestClient(app) as client:
         session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
         current_question = session["current_question"]
-        assert current_question["id"] == "patient_name"
+        assert current_question["id"] == "history_source"
 
         answers = {
+            "history_source": "Patient",
             "patient_name": "Jane Example",
             "patient_age": "29",
             "patient_sex": "Female",
@@ -73,7 +74,6 @@ def test_airway_vision_capture_updates_session_and_completes_after_both_views() 
             "body_metrics": "68 kg and 162 cm",
             "preoperative_diagnosis": "Fibroid uterus",
             "proposed_procedure": "Total abdominal hysterectomy",
-            "history_source": "Patient",
             "previous_surgery": "No",
             "diabetes": "No",
             "hypertension": "No",

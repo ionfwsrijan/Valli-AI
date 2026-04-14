@@ -10,20 +10,38 @@ def test_session_creation_and_progression() -> None:
         session = client.post("/api/sessions", json={"consent_for_ai": True})
         assert session.status_code == 200
         payload = session.json()
-        assert payload["current_question"]["id"] == "patient_name"
-        assert payload["current_question"]["prompt_text"] == "What is your name?"
+        assert payload["current_question"]["id"] == "history_source"
+        assert payload["current_question"]["prompt_text"] == "History taken from:\nPatient\nRelative/Guardian\nMedical Records"
         assert payload["transcript"][0]["speaker"] == "ai"
         assert payload["transcript"][0]["message"] == "Hello! I am Valli. You may use text or voice for taking the assessment."
-        assert payload["transcript"][1]["message"] == "What is your name?"
+        assert payload["transcript"][1]["message"] == "History taken from:\nPatient\nRelative/Guardian\nMedical Records"
 
         progressed = client.post(
             f"/api/sessions/{payload['session_id']}/answer",
-            json={"answer_text": "Jane Example"},
+            json={"answer_text": "Relative/Guardian"},
         )
         assert progressed.status_code == 200
         progressed_payload = progressed.json()
-        assert progressed_payload["answers"]["patient_name"] == "Jane Example"
+        assert progressed_payload["answers"]["history_source"] == "relative_guardian"
+        assert progressed_payload["current_question"]["id"] == "patient_name"
+        assert progressed_payload["current_question"]["text"] == "What's the patient's name?"
+        assert progressed_payload["transcript"][-1]["message"] == "What's the patient's name?"
         assert len(progressed_payload["transcript"]) == 4
+
+
+def test_history_source_patient_keeps_patient_facing_identity_questions() -> None:
+    with TestClient(app) as client:
+        session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
+        session_id = session["session_id"]
+
+        progressed = client.post(
+            f"/api/sessions/{session_id}/answer",
+            json={"answer_text": "Patient"},
+        ).json()
+
+        assert progressed["answers"]["history_source"] == "patient"
+        assert progressed["current_question"]["id"] == "patient_name"
+        assert progressed["current_question"]["text"] == "What is your name?"
 
 
 def test_questionnaire_defers_airway_exam_to_camera_stage() -> None:
@@ -81,6 +99,10 @@ def test_mixed_answer_and_policy_question_keeps_assessment_on_track() -> None:
         session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
         session = client.post(
             f"/api/sessions/{session['session_id']}/answer",
+            json={"answer_text": "Patient"},
+        ).json()
+        session = client.post(
+            f"/api/sessions/{session['session_id']}/answer",
             json={"answer_text": "Jane Example"},
         ).json()
         assert session["current_question"]["id"] == "patient_age"
@@ -104,7 +126,7 @@ def test_optional_ids_can_be_skipped_and_body_metrics_follow_up_until_complete()
         session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
         session_id = session["session_id"]
 
-        for answer in ["Jane Example", "29", "Female"]:
+        for answer in ["Patient", "Jane Example", "29", "Female"]:
             session = client.post(
                 f"/api/sessions/{session_id}/answer",
                 json={"answer_text": answer},
@@ -148,6 +170,11 @@ def test_invalid_numeric_answer_keeps_same_question_and_reasks() -> None:
     with TestClient(app) as client:
         session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
         session_id = session["session_id"]
+
+        session = client.post(
+            f"/api/sessions/{session_id}/answer",
+            json={"answer_text": "Patient"},
+        ).json()
 
         session = client.post(
             f"/api/sessions/{session_id}/answer",
@@ -265,6 +292,6 @@ def test_policy_only_question_does_not_consume_current_question() -> None:
         )
         assert policy_only.status_code == 200
         payload = policy_only.json()
-        assert "patient_name" not in payload["answers"]
-        assert payload["current_question"]["id"] == "patient_name"
-        assert payload["transcript"][-1]["message"] == "What is your name?"
+        assert "history_source" not in payload["answers"]
+        assert payload["current_question"]["id"] == "history_source"
+        assert payload["transcript"][-1]["message"] == "History taken from:\nPatient\nRelative/Guardian\nMedical Records"
