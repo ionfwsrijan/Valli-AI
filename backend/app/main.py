@@ -251,6 +251,8 @@ def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends
         policy = retrieve_policy_answer(routing["policy_question"])
         source_text = f" Source: {', '.join(policy['sources'])}." if policy["sources"] else ""
         transcript.append(transcript_entry("ai", f"Hospital policy guidance: {policy['answer']}{source_text}"))
+    elif routing.get("interjection_message"):
+        transcript.append(transcript_entry("ai", routing["interjection_message"]))
 
     if routing["mode"] in {"answer_only", "mixed"}:
         if not is_question_complete(current, answers):

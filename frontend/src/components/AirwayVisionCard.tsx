@@ -282,7 +282,7 @@ export function AirwayVisionCard({
               />
               {!cameraActive ? (
                 <div className="vision-overlay">
-                  <p>Open the webcam or upload a photo to analyze the required airway view and complete the camera examination.</p>
+                  <p>Open the webcam or upload a photo for the required airway view, then click the Analyze button to start the assessment.</p>
                 </div>
               ) : null}
             </div>
@@ -327,7 +327,7 @@ export function AirwayVisionCard({
             </div>
 
             <p className="helper-text">
-              Both frontal and side-profile captures are required to finish the assessment.
+              Both frontal and side-profile captures are required to finish the assessment. Click the Analyze button after each capture because the analysis does not start automatically.
             </p>
             {captureNotice ? <p className="success-text">{captureNotice}</p> : null}
             {cameraError ? <p className="error-text">{cameraError}</p> : null}

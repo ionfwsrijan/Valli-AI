@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from .policy_rag import detect_policy_question, split_answer_and_policy_question
+from .policy_rag import (
+    detect_off_topic_question,
+    detect_policy_question,
+    looks_like_question,
+    off_topic_redirect_answer,
+    split_answer_and_policy_question,
+)
 from .questionnaire import Question, parse_answer, parse_boolean, parse_choice
 
 
@@ -31,26 +37,24 @@ def has_clear_answer(question: Question, answer_text: str, answers: dict[str, An
 def classify_input(question: Question, raw_text: str, answers: dict[str, Any] | None = None) -> dict[str, Any]:
     cleaned = raw_text.strip()
 
-    if (
-        question.input_type in {"boolean", "choice", "body_metrics"}
-        and has_clear_answer(question, cleaned, answers)
-        and not detect_policy_question(cleaned)
-    ):
-        return {
-            "mode": "answer_only",
-            "answer_text": cleaned,
-            "policy_question": None,
-            "parsed_answer": parse_answer(question, cleaned, answers),
-        }
-
     answer_part, policy_question = split_answer_and_policy_question(raw_text)
     contains_policy_question = policy_question is not None and detect_policy_question(policy_question)
+    contains_non_assessment_question = (
+        policy_question is not None
+        and not contains_policy_question
+        and looks_like_question(policy_question)
+        and not (policy_question == cleaned and has_clear_answer(question, cleaned, answers))
+    )
+    contains_off_topic_question = policy_question is not None and (
+        detect_off_topic_question(policy_question) or contains_non_assessment_question
+    )
 
     if contains_policy_question and answer_part and has_clear_answer(question, answer_part, answers):
         return {
             "mode": "mixed",
             "answer_text": answer_part,
             "policy_question": policy_question,
+            "interjection_message": None,
             "parsed_answer": parse_answer(question, answer_part, answers),
         }
 
@@ -59,12 +63,46 @@ def classify_input(question: Question, raw_text: str, answers: dict[str, Any] | 
             "mode": "policy_only",
             "answer_text": None,
             "policy_question": policy_question,
+            "interjection_message": None,
             "parsed_answer": None,
+        }
+
+    if contains_off_topic_question and answer_part and has_clear_answer(question, answer_part, answers):
+        return {
+            "mode": "mixed",
+            "answer_text": answer_part,
+            "policy_question": None,
+            "interjection_message": off_topic_redirect_answer(answer_recorded=True),
+            "parsed_answer": parse_answer(question, answer_part, answers),
+        }
+
+    if contains_off_topic_question:
+        return {
+            "mode": "off_topic_only",
+            "answer_text": None,
+            "policy_question": None,
+            "interjection_message": off_topic_redirect_answer(),
+            "parsed_answer": None,
+        }
+
+    if (
+        question.input_type in {"boolean", "choice", "body_metrics"}
+        and has_clear_answer(question, cleaned, answers)
+        and not detect_policy_question(cleaned)
+        and not detect_off_topic_question(cleaned)
+    ):
+        return {
+            "mode": "answer_only",
+            "answer_text": cleaned,
+            "policy_question": None,
+            "interjection_message": None,
+            "parsed_answer": parse_answer(question, cleaned, answers),
         }
 
     return {
         "mode": "answer_only",
         "answer_text": cleaned,
         "policy_question": None,
+        "interjection_message": None,
         "parsed_answer": parse_answer(question, raw_text, answers),
     }

@@ -26,10 +26,18 @@ class PolicyRetriever:
 
 QUESTION_PATTERNS = [
     r"\bcan i\b",
+    r"\bcan you\b",
     r"\bshould i\b",
+    r"\bdo you\b",
+    r"\bare you\b",
     r"\bwhat if\b",
+    r"\bwhat(?:'s| is| are| about)\b",
     r"\bwhen should\b",
     r"\bwhen can\b",
+    r"\bwhere(?:'s| is| are| can| should)\b",
+    r"\bwho(?:'s| is| are| can| should)\b",
+    r"\bhow(?:\s+do|\s+does|\s+did|\s+is|\s+are|\s+am|\s+long|\s+many|\s+about)\b",
+    r"\bwhy\b",
     r"\bhow long\b",
     r"\bhow many\b",
     r"\bdo i need\b",
@@ -64,6 +72,15 @@ POLICY_KEYWORDS = {
     "arrival",
     "report",
     "documents",
+    "pizza",
+    "burger",
+    "sandwich",
+    "meal",
+    "rice",
+    "roti",
+    "chapati",
+    "juice",
+    "milk",
 }
 
 FASTING_KEYWORDS = {
@@ -99,6 +116,53 @@ RIDE_HOME_KEYWORDS = {
     "lyft",
 }
 
+SOLID_FOOD_KEYWORDS = {
+    "food",
+    "eat",
+    "eating",
+    "pizza",
+    "burger",
+    "sandwich",
+    "meal",
+    "rice",
+    "roti",
+    "chapati",
+    "solid",
+}
+
+DRINK_KEYWORDS = {
+    "water",
+    "drink",
+    "drinking",
+    "liquid",
+    "liquids",
+    "juice",
+    "tea",
+    "coffee",
+    "milk",
+}
+
+OFF_TOPIC_KEYWORDS = {
+    "looking good",
+    "look good",
+    "looking godd",
+    "look godd",
+    "looking gud",
+    "look gud",
+    "how do i look",
+    "how am i looking",
+    "beautiful",
+    "handsome",
+    "pretty",
+    "cute",
+    "smart",
+    "hot",
+    "ugly",
+    "joke",
+    "funny",
+    "weather",
+}
+
 DAY_BEFORE_PATTERNS = (
     "day before",
     "the day before",
@@ -118,6 +182,16 @@ FINAL_WINDOW_PATTERNS = (
     "morning of",
     "right before",
     "just before",
+    "in an hour",
+    "in 1 hour",
+    "in one hour",
+    "within an hour",
+    "within 1 hour",
+    "within one hour",
+    "in 2 hours",
+    "in two hours",
+    "within 2 hours",
+    "within two hours",
 )
 
 
@@ -177,13 +251,42 @@ def detect_policy_question(text: str) -> bool:
     cleaned = normalize_whitespace(text)
     lowered = cleaned.lower()
     keyword_hit = any(keyword in lowered for keyword in POLICY_KEYWORDS)
-    return bool(keyword_hit and (cleaned.endswith("?") or QUESTION_REGEX.search(cleaned)))
+    return bool(keyword_hit and looks_like_question(cleaned))
+
+
+def looks_like_question(text: str) -> bool:
+    cleaned = normalize_whitespace(text)
+    return bool(cleaned and (cleaned.endswith("?") or QUESTION_REGEX.search(cleaned)))
+
+
+def detect_off_topic_question(text: str) -> bool:
+    cleaned = normalize_whitespace(text)
+    lowered = cleaned.lower()
+    if detect_policy_question(cleaned):
+        return False
+    if not looks_like_question(cleaned):
+        return False
+    return any(keyword in lowered for keyword in OFF_TOPIC_KEYWORDS)
 
 
 def split_answer_and_policy_question(text: str) -> tuple[str | None, str | None]:
     cleaned = normalize_whitespace(text)
     if not cleaned:
         return None, None
+
+    question_mark_index = cleaned.find("?")
+    if question_mark_index != -1:
+        clause_start = max(
+            cleaned.rfind(". ", 0, question_mark_index + 1),
+            cleaned.rfind("! ", 0, question_mark_index + 1),
+            cleaned.rfind("; ", 0, question_mark_index + 1),
+            cleaned.rfind(": ", 0, question_mark_index + 1),
+        )
+        if clause_start != -1:
+            answer_part = cleaned[:clause_start].rstrip(" .,!;:-")
+            question_part = cleaned[clause_start + 2 :].strip()
+            if looks_like_question(question_part):
+                return (answer_part or None), (question_part or None)
 
     match = QUESTION_REGEX.search(cleaned)
     if match:
@@ -210,6 +313,15 @@ def build_contextual_answer(query: str, snippets: list[PolicyChunk]) -> str:
         lead_parts.append(
             "This depends on how soon the procedure is and on the instructions from the anesthesiology or surgical team."
         )
+        if contains_pattern(lowered, FINAL_WINDOW_PATTERNS):
+            if contains_any(lowered, SOLID_FOOD_KEYWORDS):
+                lead_parts.append(
+                    "If the procedure is in about an hour or within the next couple of hours, solid food like pizza should not be eaten now."
+                )
+            elif contains_any(lowered, DRINK_KEYWORDS):
+                lead_parts.append(
+                    "If the procedure is very soon, do not start drinking now unless the hospital team has already given you a clear instruction for it."
+                )
         if contains_pattern(lowered, DAY_BEFORE_PATTERNS):
             lead_parts.append(
                 "A day before surgery is different from the final immediate pre-operative window, so the assistant should not treat them the same."
@@ -231,6 +343,14 @@ def build_contextual_answer(query: str, snippets: list[PolicyChunk]) -> str:
     if supporting:
         answer_parts.append(f"Related note: {supporting[0].content}")
     return " ".join(answer_parts)
+
+
+def off_topic_redirect_answer(*, answer_recorded: bool = False) -> str:
+    prefix = "I have recorded your answer. " if answer_recorded else ""
+    return (
+        f"{prefix}Let's stay focused on your pre-anesthetic assessment so I can record the right clinical details safely. "
+        "Please answer the current question, or ask me a surgery-related question if you need help."
+    )
 
 
 def retrieve_policy_answer(query: str) -> dict[str, Any]:

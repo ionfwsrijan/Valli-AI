@@ -166,6 +166,47 @@ const TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
     'History taken from:': 'வரலாறு எவரிடமிருந்து பெறப்படுகிறது?',
     'Patient': 'நோயாளர்',
     'Relative/Guardian': 'உறவினர் / பாதுகாவலர்',
+    'Medical Records': 'மருத்துவ பதிவுகள்',
+    'Pre-Anesthetic Assessment': 'முன்-மயக்க மதிப்பீடு',
+    'Pre-anesthetic assessment for patient intake and airway screening.':
+      'நோயாளர் தகவல் சேகரிப்பும் காற்றுப்பாதை மதிப்பீடும் செய்யும் முன்-மயக்க பரிசோதனை.',
+    'Conduct the patient interview, complete the camera-based airway examination, and generate the final assessment report from one streamlined workflow.':
+      'நோயாளர் நேர்காணலை முடித்து, கேமரா அடிப்படையிலான காற்றுப்பாதை பரிசோதனையை செய்து, ஒரே நடைமுறையில் இறுதி அறிக்கையை உருவாக்குங்கள்.',
+    'Interview': 'நேர்காணல்',
+    'Guided patient intake': 'வழிகாட்டப்பட்ட நோயாளர் பதிவு',
+    'Collect the full pre-anesthetic history with text or voice input.':
+      'உரை அல்லது குரல் மூலம் முழு முன்-மயக்க வரலாற்றையும் பதிவு செய்யுங்கள்.',
+    'Camera': 'கேமரா',
+    'Airway examination': 'காற்றுப்பாதை பரிசோதனை',
+    'Capture the frontal and side-profile views after the questionnaire is complete.':
+      'கேள்வித்தாள் முடிந்த பிறகு முன்புறமும் பக்கவாட்டும் கொண்ட படங்களை பதிவு செய்யுங்கள்.',
+    'Report': 'அறிக்கை',
+    'Printable final summary': 'அச்சிடக்கூடிய இறுதி சுருக்கம்',
+    'Review the transcript, camera findings, and final report in one place.':
+      'உரையாடல் பதிவு, கேமரா கண்டறிதல்கள், இறுதி அறிக்கை ஆகியவற்றை ஒரே இடத்தில் பாருங்கள்.',
+    'Workflow': 'நடவடிக்கை ஓட்டம்',
+    'Move from intake to camera examination to final report.':
+      'நோயாளர் பதிவு முதல் கேமரா பரிசோதனை, அங்கிருந்து இறுதி அறிக்கை வரை செல்லுங்கள்.',
+    'Assessment': 'மதிப்பீடு',
+    'Patient questionnaire': 'நோயாளர் கேள்வித்தாள்',
+    'Answer the interview questions in sequence and capture the full transcript.':
+      'கேள்விகளுக்கு வரிசையாக பதிலளித்து முழு உரையாடல் பதிவையும் சேமிக்கவும்.',
+    'Dedicated airway page': 'தனிப்பட்ட காற்றுப்பாதை பக்கம்',
+    'Switch to the camera page after the questionnaire for the image-based examination.':
+      'கேள்வித்தாளுக்குப் பிறகு பட அடிப்படையிலான பரிசோதனைக்காக கேமரா பக்கத்துக்கு செல்லுங்கள்.',
+    'Separated findings': 'பிரித்துக் காட்டப்படும் முடிவுகள்',
+    'Review the transcript and camera findings separately in the final report.':
+      'இறுதி அறிக்கையில் உரையாடல் பதிவு மற்றும் கேமரா முடிவுகளை தனித்தனியாக பாருங்கள்.',
+    'Records': 'பதிவுகள்',
+    'Completed assessments only': 'முடிந்த மதிப்பீடுகள் மட்டும்',
+    'Open previously completed reports from the records page.':
+      'முந்தைய முடிக்கப்பட்ட அறிக்கைகளை பதிவுகள் பக்கத்தில் திறக்கலாம்.',
+    'Start the interview and complete the patient questionnaire.':
+      'நேர்காணலை தொடங்கி நோயாளர் கேள்வித்தாளை முடிக்கவும்.',
+    'Move to the separate camera page for the airway examination.':
+      'காற்றுப்பாதை பரிசோதனைக்காக தனி கேமரா பக்கத்துக்கு செல்லுங்கள்.',
+    'Generate and print the final transcript and report after completion.':
+      'முடிவில் இறுதி உரையாடல் பதிவு மற்றும் அறிக்கையை உருவாக்கி அச்சிடுங்கள்.',
     'Do you have any history of previous surgeries in the past?': 'முன்பு ஏதேனும் அறுவை சிகிச்சை செய்ததா?',
     'Could you please mention when it was done?': 'அது எப்போது செய்யப்பட்டது என்று சொல்ல முடியுமா?',
     'Could you please mention the year?': 'எந்த ஆண்டில் செய்யப்பட்டது?',
@@ -282,6 +323,47 @@ const TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
     'History taken from:': 'इतिहास लिया गया:',
     'Patient': 'मरीज',
     'Relative/Guardian': 'रिश्तेदार / अभिभावक',
+    'Medical Records': 'मेडिकल रिकॉर्ड्स',
+    'Pre-Anesthetic Assessment': 'प्री-एनेस्थेटिक आकलन',
+    'Pre-anesthetic assessment for patient intake and airway screening.':
+      'मरीज की जानकारी और एयरवे स्क्रीनिंग के लिए प्री-एनेस्थेटिक आकलन।',
+    'Conduct the patient interview, complete the camera-based airway examination, and generate the final assessment report from one streamlined workflow.':
+      'मरीज का इंटरव्यू पूरा करें, कैमरा आधारित एयरवे जांच करें, और एक ही प्रक्रिया में अंतिम रिपोर्ट तैयार करें।',
+    'Interview': 'इंटरव्यू',
+    'Guided patient intake': 'मार्गदर्शित मरीज पंजीकरण',
+    'Collect the full pre-anesthetic history with text or voice input.':
+      'टेक्स्ट या आवाज़ से पूरा प्री-एनेस्थेटिक इतिहास दर्ज करें।',
+    'Camera': 'कैमरा',
+    'Airway examination': 'एयरवे जांच',
+    'Capture the frontal and side-profile views after the questionnaire is complete.':
+      'प्रश्नावली पूरी होने के बाद सामने और साइड प्रोफाइल दोनों दृश्य कैप्चर करें।',
+    'Report': 'रिपोर्ट',
+    'Printable final summary': 'प्रिंट करने योग्य अंतिम सारांश',
+    'Review the transcript, camera findings, and final report in one place.':
+      'ट्रांसक्रिप्ट, कैमरा निष्कर्ष और अंतिम रिपोर्ट को एक ही जगह देखें।',
+    'Workflow': 'कार्यप्रवाह',
+    'Move from intake to camera examination to final report.':
+      'मरीज पंजीकरण से कैमरा जांच और फिर अंतिम रिपोर्ट तक बढ़ें।',
+    'Assessment': 'आकलन',
+    'Patient questionnaire': 'मरीज प्रश्नावली',
+    'Answer the interview questions in sequence and capture the full transcript.':
+      'प्रश्नों का क्रम से उत्तर दें और पूरा ट्रांसक्रिप्ट रिकॉर्ड करें।',
+    'Dedicated airway page': 'अलग एयरवे पेज',
+    'Switch to the camera page after the questionnaire for the image-based examination.':
+      'प्रश्नावली के बाद इमेज आधारित जांच के लिए कैमरा पेज पर जाएँ।',
+    'Separated findings': 'अलग-अलग निष्कर्ष',
+    'Review the transcript and camera findings separately in the final report.':
+      'अंतिम रिपोर्ट में ट्रांसक्रिप्ट और कैमरा निष्कर्ष अलग-अलग देखें।',
+    'Records': 'रिकॉर्ड्स',
+    'Completed assessments only': 'सिर्फ पूर्ण आकलन',
+    'Open previously completed reports from the records page.':
+      'रिकॉर्ड्स पेज से पहले से पूरी हुई रिपोर्ट्स खोलें।',
+    'Start the interview and complete the patient questionnaire.':
+      'इंटरव्यू शुरू करें और मरीज प्रश्नावली पूरी करें।',
+    'Move to the separate camera page for the airway examination.':
+      'एयरवे जांच के लिए अलग कैमरा पेज पर जाएँ।',
+    'Generate and print the final transcript and report after completion.':
+      'पूरा होने के बाद अंतिम ट्रांसक्रिप्ट और रिपोर्ट बनाकर प्रिंट करें।',
     'Do you have any history of previous surgeries in the past?': 'क्या पहले कभी आपकी कोई सर्जरी हुई है?',
     'Could you please mention when it was done?': 'कृपया बताइए यह कब हुई थी?',
     'Could you please mention the year?': 'कृपया वर्ष बताइए।',

@@ -167,6 +167,7 @@ PATIENT_IDENTITY_QUESTIONS = [
         options=[
             QuestionOption("patient", "Patient"),
             QuestionOption("relative_guardian", "Relative/Guardian"),
+            QuestionOption("medical_records", "Medical Records"),
         ],
     ),
     Question("patient_name", "patient_name", "What is your name?", "Patient Details"),

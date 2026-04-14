@@ -11,10 +11,10 @@ def test_session_creation_and_progression() -> None:
         assert session.status_code == 200
         payload = session.json()
         assert payload["current_question"]["id"] == "history_source"
-        assert payload["current_question"]["prompt_text"] == "Who is taking the assessment?\nPatient\nRelative/Guardian"
+        assert payload["current_question"]["prompt_text"] == "Who is taking the assessment?\nPatient\nRelative/Guardian\nMedical Records"
         assert payload["transcript"][0]["speaker"] == "ai"
         assert payload["transcript"][0]["message"] == "Hello! I am Valli. You may use text or voice for taking the assessment."
-        assert payload["transcript"][1]["message"] == "Who is taking the assessment?\nPatient\nRelative/Guardian"
+        assert payload["transcript"][1]["message"] == "Who is taking the assessment?\nPatient\nRelative/Guardian\nMedical Records"
 
         progressed = client.post(
             f"/api/sessions/{payload['session_id']}/answer",
@@ -42,6 +42,21 @@ def test_history_source_patient_keeps_patient_facing_identity_questions() -> Non
         assert progressed["answers"]["history_source"] == "patient"
         assert progressed["current_question"]["id"] == "patient_name"
         assert progressed["current_question"]["text"] == "What is your name?"
+
+
+def test_history_source_medical_records_keeps_patient_referenced_identity_questions() -> None:
+    with TestClient(app) as client:
+        session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
+        session_id = session["session_id"]
+
+        progressed = client.post(
+            f"/api/sessions/{session_id}/answer",
+            json={"answer_text": "Medical Records"},
+        ).json()
+
+        assert progressed["answers"]["history_source"] == "medical_records"
+        assert progressed["current_question"]["id"] == "patient_name"
+        assert progressed["current_question"]["text"] == "What's the patient's name?"
 
 
 def test_questionnaire_defers_airway_exam_to_camera_stage() -> None:
@@ -164,6 +179,34 @@ def test_optional_ids_can_be_skipped_and_body_metrics_follow_up_until_complete()
         assert session["answers"]["height_cm"] == 162
         assert session["answers"]["body_metrics"] is True
         assert session["current_question"]["id"] == "preoperative_diagnosis"
+
+
+def test_body_metrics_can_include_policy_question_without_losing_progress() -> None:
+    with TestClient(app) as client:
+        session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
+        session_id = session["session_id"]
+
+        for answer in ["Patient", "Jane Example", "29", "Female", "skip", "skip"]:
+            session = client.post(
+                f"/api/sessions/{session_id}/answer",
+                json={"answer_text": answer},
+            ).json()
+
+        assert session["current_question"]["id"] == "body_metrics"
+
+        session = client.post(
+            f"/api/sessions/{session_id}/answer",
+            json={"answer_text": "I am 68 kg and 182 cm. Can I eat pizza? I have surgery in an hour."},
+        ).json()
+
+        assert session["answers"]["weight_kg"] == 68
+        assert session["answers"]["height_cm"] == 182
+        assert session["answers"]["body_metrics"] is True
+        assert session["current_question"]["id"] == "preoperative_diagnosis"
+        assert any(
+            "solid food like pizza should not be eaten now" in item["message"].lower()
+            for item in session["transcript"]
+        )
 
 
 def test_invalid_numeric_answer_keeps_same_question_and_reasks() -> None:
@@ -294,4 +337,53 @@ def test_policy_only_question_does_not_consume_current_question() -> None:
         payload = policy_only.json()
         assert "history_source" not in payload["answers"]
         assert payload["current_question"]["id"] == "history_source"
-        assert payload["transcript"][-1]["message"] == "Who is taking the assessment?\nPatient\nRelative/Guardian"
+        assert payload["transcript"][-1]["message"] == "Who is taking the assessment?\nPatient\nRelative/Guardian\nMedical Records"
+
+
+def test_off_topic_question_politely_redirects_without_consuming_answer() -> None:
+    with TestClient(app) as client:
+        session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
+        off_topic_only = client.post(
+            f"/api/sessions/{session['session_id']}/answer",
+            json={"answer_text": "Am I looking good?"},
+        )
+        assert off_topic_only.status_code == 200
+        payload = off_topic_only.json()
+        assert "history_source" not in payload["answers"]
+        assert payload["current_question"]["id"] == "history_source"
+        assert "Let's stay focused on your pre-anesthetic assessment" in payload["transcript"][-2]["message"]
+        assert payload["transcript"][-1]["message"] == "Who is taking the assessment?\nPatient\nRelative/Guardian\nMedical Records"
+
+
+def test_mixed_answer_and_off_topic_question_records_answer_then_redirects() -> None:
+    with TestClient(app) as client:
+        session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
+        mixed = client.post(
+            f"/api/sessions/{session['session_id']}/answer",
+            json={"answer_text": "Patient. Am I looking godd?"},
+        )
+
+        assert mixed.status_code == 200
+        payload = mixed.json()
+        assert payload["answers"]["history_source"] == "patient"
+        assert payload["current_question"]["id"] == "patient_name"
+        assert payload["transcript"][-2]["message"].startswith("I have recorded your answer.")
+        assert "Let's stay focused on your pre-anesthetic assessment" in payload["transcript"][-2]["message"]
+        assert payload["transcript"][-1]["message"] == "What is your name?"
+
+
+def test_mixed_answer_and_generic_off_topic_question_are_both_handled() -> None:
+    with TestClient(app) as client:
+        session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
+        mixed = client.post(
+            f"/api/sessions/{session['session_id']}/answer",
+            json={"answer_text": "Patient. What is your favorite color?"},
+        )
+
+        assert mixed.status_code == 200
+        payload = mixed.json()
+        assert payload["answers"]["history_source"] == "patient"
+        assert payload["current_question"]["id"] == "patient_name"
+        assert payload["transcript"][-2]["message"].startswith("I have recorded your answer.")
+        assert "Let's stay focused on your pre-anesthetic assessment" in payload["transcript"][-2]["message"]
+        assert payload["transcript"][-1]["message"] == "What is your name?"
