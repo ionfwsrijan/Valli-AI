@@ -161,13 +161,12 @@ PATIENT_IDENTITY_QUESTIONS = [
     Question(
         "history_source",
         "history_source",
-        "History taken from:",
+        "Who is taking the assessment?",
         "Patient Details",
         "choice",
         options=[
             QuestionOption("patient", "Patient"),
             QuestionOption("relative_guardian", "Relative/Guardian"),
-            QuestionOption("medical_records", "Medical Records"),
         ],
     ),
     Question("patient_name", "patient_name", "What is your name?", "Patient Details"),

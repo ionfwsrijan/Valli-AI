@@ -11,10 +11,10 @@ def test_session_creation_and_progression() -> None:
         assert session.status_code == 200
         payload = session.json()
         assert payload["current_question"]["id"] == "history_source"
-        assert payload["current_question"]["prompt_text"] == "History taken from:\nPatient\nRelative/Guardian\nMedical Records"
+        assert payload["current_question"]["prompt_text"] == "Who is taking the assessment?\nPatient\nRelative/Guardian"
         assert payload["transcript"][0]["speaker"] == "ai"
         assert payload["transcript"][0]["message"] == "Hello! I am Valli. You may use text or voice for taking the assessment."
-        assert payload["transcript"][1]["message"] == "History taken from:\nPatient\nRelative/Guardian\nMedical Records"
+        assert payload["transcript"][1]["message"] == "Who is taking the assessment?\nPatient\nRelative/Guardian"
 
         progressed = client.post(
             f"/api/sessions/{payload['session_id']}/answer",
@@ -294,4 +294,4 @@ def test_policy_only_question_does_not_consume_current_question() -> None:
         payload = policy_only.json()
         assert "history_source" not in payload["answers"]
         assert payload["current_question"]["id"] == "history_source"
-        assert payload["transcript"][-1]["message"] == "History taken from:\nPatient\nRelative/Guardian\nMedical Records"
+        assert payload["transcript"][-1]["message"] == "Who is taking the assessment?\nPatient\nRelative/Guardian"
