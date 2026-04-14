@@ -319,6 +319,7 @@ export default function App() {
       return;
     }
 
+    const priorTranscriptLength = session.transcript.length;
     speech.stopListening();
     setBusy(true);
     setError(null);
@@ -333,17 +334,21 @@ export default function App() {
       speech.resetTranscript();
       await refreshDashboard();
 
+      const nextAiMessages = updated.transcript
+        .slice(priorTranscriptLength)
+        .filter((entry) => entry.speaker === "ai")
+        .map((entry) => entry.message);
+
       if (updated.status === "awaiting_exam") {
         setView("camera");
-        speakEntries([
-          updated.transcript[updated.transcript.length - 1]?.message ?? "",
-        ]);
       } else if (updated.status === "completed") {
         const reportData = await fetchReport(updated.session_id);
         setReport(reportData);
         setView("report");
-      } else {
-        speakEntries([getQuestionPrompt(updated.current_question)]);
+      }
+
+      if (nextAiMessages.length) {
+        speakEntries(nextAiMessages);
       }
     } catch (requestError) {
       setError(

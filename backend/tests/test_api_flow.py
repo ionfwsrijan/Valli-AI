@@ -204,7 +204,7 @@ def test_body_metrics_can_include_policy_question_without_losing_progress() -> N
         assert session["answers"]["body_metrics"] is True
         assert session["current_question"]["id"] == "preoperative_diagnosis"
         assert any(
-            "solid food like pizza should not be eaten now" in item["message"].lower()
+            "do not eat pizza or other solid food now" in item["message"].lower()
             for item in session["transcript"]
         )
 
@@ -338,6 +338,27 @@ def test_policy_only_question_does_not_consume_current_question() -> None:
         assert "history_source" not in payload["answers"]
         assert payload["current_question"]["id"] == "history_source"
         assert payload["transcript"][-1]["message"] == "Who is taking the assessment?\nPatient\nRelative/Guardian\nMedical Records"
+
+
+def test_policy_question_during_name_step_reasks_name_instead_of_skipping() -> None:
+    with TestClient(app) as client:
+        session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
+        session = client.post(
+            f"/api/sessions/{session['session_id']}/answer",
+            json={"answer_text": "Patient"},
+        ).json()
+
+        response = client.post(
+            f"/api/sessions/{session['session_id']}/answer",
+            json={"answer_text": "my surgery is in 4 hour, can i eat a slice of pizza?"},
+        )
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert "patient_name" not in payload["answers"]
+        assert payload["current_question"]["id"] == "patient_name"
+        assert any("do not eat pizza or other solid food now" in item["message"].lower() for item in payload["transcript"])
+        assert payload["transcript"][-1]["message"] == "What is your name?"
 
 
 def test_off_topic_question_politely_redirects_without_consuming_answer() -> None:

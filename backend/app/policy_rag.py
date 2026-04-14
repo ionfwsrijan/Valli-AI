@@ -209,6 +209,13 @@ def contains_pattern(text: str, patterns: tuple[str, ...]) -> bool:
     return any(pattern in lowered for pattern in patterns)
 
 
+def first_sentence(text: str) -> str:
+    match = re.search(r"(.+?[.!?])(?:\s|$)", normalize_whitespace(text))
+    if match:
+        return match.group(1).strip()
+    return normalize_whitespace(text)
+
+
 def split_policy_sections(raw_text: str) -> list[PolicyChunk]:
     sections: list[PolicyChunk] = []
     current_heading = "General"
@@ -305,44 +312,33 @@ def split_answer_and_policy_question(text: str) -> tuple[str | None, str | None]
 
 def build_contextual_answer(query: str, snippets: list[PolicyChunk]) -> str:
     primary = snippets[0]
-    supporting = snippets[1:] if len(snippets) > 1 else []
     lowered = query.lower()
-    lead_parts: list[str] = []
 
     if contains_any(lowered, FASTING_KEYWORDS):
-        lead_parts.append(
-            "This depends on how soon the procedure is and on the instructions from the anesthesiology or surgical team."
-        )
         if contains_pattern(lowered, FINAL_WINDOW_PATTERNS):
             if contains_any(lowered, SOLID_FOOD_KEYWORDS):
-                lead_parts.append(
-                    "If the procedure is in about an hour or within the next couple of hours, solid food like pizza should not be eaten now."
+                return (
+                    "If surgery is within about four hours, do not eat pizza or other solid food now; "
+                    "follow your hospital's fasting plan or call the anesthesiology team if unsure."
                 )
-            elif contains_any(lowered, DRINK_KEYWORDS):
-                lead_parts.append(
-                    "If the procedure is very soon, do not start drinking now unless the hospital team has already given you a clear instruction for it."
+            if contains_any(lowered, DRINK_KEYWORDS):
+                return (
+                    "Because your surgery is soon, do not start drinking now unless the hospital team has clearly told you that clear liquids are still allowed."
                 )
         if contains_pattern(lowered, DAY_BEFORE_PATTERNS):
-            lead_parts.append(
-                "A day before surgery is different from the final immediate pre-operative window, so the assistant should not treat them the same."
+            return (
+                "The day before surgery is different from the immediate pre-operative window, so please follow your hospital's written fasting plan instead of guessing."
             )
-        elif contains_pattern(lowered, FINAL_WINDOW_PATTERNS):
-            lead_parts.append(
-                "As the procedure gets close, fasting becomes stricter, so the assistant should not answer with a blanket yes."
-            )
-        else:
-            lead_parts.append(
-                "The assistant should avoid a blanket yes or no about water or food when the exact anesthesia timing is not known."
-            )
-    elif contains_any(lowered, RIDE_HOME_KEYWORDS):
-        lead_parts.append(
-            "Ride-home advice depends on the anesthesia plan and the discharge pathway, but sedation and anesthesia usually require a responsible adult unless the hospital team has explicitly cleared otherwise."
+        return (
+            "Fasting depends on when the anesthesia will start, so please follow your hospital's written instructions or call the anesthesiology team before eating or drinking."
         )
 
-    answer_parts = [*lead_parts, primary.content]
-    if supporting:
-        answer_parts.append(f"Related note: {supporting[0].content}")
-    return " ".join(answer_parts)
+    if contains_any(lowered, RIDE_HOME_KEYWORDS):
+        return (
+            "After anesthesia or sedation, plan for a responsible adult to take you home unless the hospital team has clearly told you otherwise."
+        )
+
+    return first_sentence(primary.content)
 
 
 def off_topic_redirect_answer(*, answer_recorded: bool = False) -> str:

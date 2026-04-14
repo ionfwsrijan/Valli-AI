@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from .policy_rag import (
@@ -10,6 +11,31 @@ from .policy_rag import (
     split_answer_and_policy_question,
 )
 from .questionnaire import Question, parse_answer, parse_boolean, parse_choice
+
+NAME_PATTERN = re.compile(r"[A-Za-z][A-Za-z .'-]{0,60}$")
+TIME_OR_POLICY_STATEMENT_PATTERN = re.compile(
+    r"\b(hour|hours|minute|minutes|today|tomorrow|tonight|eat|eating|drink|drinking|water|pizza|burger|food|home|ride|driver)\b",
+    flags=re.IGNORECASE,
+)
+
+
+def has_clear_text_answer(question: Question, answer_text: str) -> bool:
+    cleaned = answer_text.strip()
+    if not cleaned or looks_like_question(cleaned):
+        return False
+
+    lowered = cleaned.lower()
+    if re.search(r"\b(i|my|me)\b", lowered) and TIME_OR_POLICY_STATEMENT_PATTERN.search(lowered):
+        return False
+
+    if question.id == "patient_name":
+        if re.search(r"\d", cleaned):
+            return False
+        if len(cleaned.split()) > 5:
+            return False
+        return bool(NAME_PATTERN.fullmatch(cleaned))
+
+    return True
 
 
 def has_clear_answer(question: Question, answer_text: str, answers: dict[str, Any] | None = None) -> bool:
@@ -31,7 +57,7 @@ def has_clear_answer(question: Question, answer_text: str, answers: dict[str, An
     if question.input_type == "choice":
         parsed = parse_choice(question, cleaned)
         return parsed in {option.value for option in question.options}
-    return True
+    return has_clear_text_answer(question, cleaned)
 
 
 def classify_input(question: Question, raw_text: str, answers: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -53,7 +79,7 @@ def classify_input(question: Question, raw_text: str, answers: dict[str, Any] | 
         return {
             "mode": "mixed",
             "answer_text": answer_part,
-            "policy_question": policy_question,
+            "policy_question": cleaned,
             "interjection_message": None,
             "parsed_answer": parse_answer(question, answer_part, answers),
         }
@@ -62,7 +88,7 @@ def classify_input(question: Question, raw_text: str, answers: dict[str, Any] | 
         return {
             "mode": "policy_only",
             "answer_text": None,
-            "policy_question": policy_question,
+            "policy_question": cleaned,
             "interjection_message": None,
             "parsed_answer": None,
         }

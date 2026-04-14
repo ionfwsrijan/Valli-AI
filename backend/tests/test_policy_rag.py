@@ -6,10 +6,9 @@ def test_fasting_answer_is_time_aware_for_day_before_question() -> None:
 
     assert "Fasting Instructions" in result["sources"]
     answer = result["answer"].lower()
-    assert "depends on how soon" in answer
     assert "day before surgery is different" in answer
-    assert "blanket yes or no" in answer
-    assert "2 hours" in answer
+    assert "written fasting plan" in answer
+    assert len(answer.split()) <= 30
 
 
 def test_fasting_answer_warns_against_solid_food_in_final_window() -> None:
@@ -18,4 +17,5 @@ def test_fasting_answer_warns_against_solid_food_in_final_window() -> None:
     assert "Fasting Instructions" in result["sources"]
     answer = result["answer"].lower()
     assert "pizza" in answer
-    assert "should not be eaten now" in answer
+    assert "do not eat" in answer
+    assert len(answer.split()) <= 30
