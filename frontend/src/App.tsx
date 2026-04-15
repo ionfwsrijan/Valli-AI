@@ -129,6 +129,15 @@ function pickPreferredValliVoice(
   );
 }
 
+function spokenText(message: string) {
+  return message
+    .replace(/^Hospital policy guidance:\s*/i, "")
+    .replace(/\s*Source:\s*[^.]+\.?$/i, "")
+    .replace(/\n+/g, ". ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export default function App() {
   const [view, setView] = useState<AssessmentView>("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -256,7 +265,7 @@ export default function App() {
     }
 
     const lines = messages
-      .map((message) => translateText(message.trim(), language))
+      .map((message) => translateText(spokenText(message), language))
       .filter(Boolean);
     if (!lines.length) {
       return;

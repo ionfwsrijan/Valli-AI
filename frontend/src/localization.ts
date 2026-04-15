@@ -147,6 +147,11 @@ const TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
   ta: {
     'Hello! I am Valli. You may use text or voice for taking the assessment.':
       'வணக்கம்! நான் வள்ளி. இந்த மதிப்பீட்டிற்கு நீங்கள் உரை அல்லது குரலை பயன்படுத்தலாம்.',
+    'Got it, thank you.': 'சரி, நன்றி.',
+    "I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":
+      'நான் உங்கள் முன்-மயக்க மதிப்பீட்டுக்கு உதவுகிறேன், அதனால் இப்போது இதிலேயே கவனம் செலுத்தலாம். தற்போதைய கேள்விக்கு பதிலளிக்கவும், அல்லது அறுவை சிகிச்சை வழிமுறைகள் பற்றி கேட்கலாம்.',
+    "I've recorded your answer. I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":
+      'உங்கள் பதிலை பதிவு செய்துவிட்டேன். நான் உங்கள் முன்-மயக்க மதிப்பீட்டுக்கு உதவுகிறேன், அதனால் இப்போது இதிலேயே கவனம் செலுத்தலாம். தற்போதைய கேள்விக்கு பதிலளிக்கவும், அல்லது அறுவை சிகிச்சை வழிமுறைகள் பற்றி கேட்கலாம்.',
     'What is your name?': 'உங்கள் பெயர் என்ன?',
     'What is your age?': 'உங்கள் வயது என்ன?',
     'For example, 42': 'உதாரணம்: 42',
@@ -304,6 +309,11 @@ const TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
   hi: {
     'Hello! I am Valli. You may use text or voice for taking the assessment.':
       'नमस्ते! मैं वल्ली हूँ। इस आकलन के लिए आप टेक्स्ट या आवाज़ का उपयोग कर सकते हैं।',
+    'Got it, thank you.': 'ठीक है, धन्यवाद।',
+    "I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":
+      'मैं आपके प्री-एनेस्थेटिक आकलन में मदद करने के लिए हूँ, इसलिए अभी इसी पर ध्यान रखें। कृपया वर्तमान प्रश्न का उत्तर दें, या जरूरत हो तो सर्जरी निर्देशों के बारे में पूछें।',
+    "I've recorded your answer. I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":
+      'मैंने आपका उत्तर रिकॉर्ड कर लिया है। मैं आपके प्री-एनेस्थेटिक आकलन में मदद करने के लिए हूँ, इसलिए अभी इसी पर ध्यान रखें। कृपया वर्तमान प्रश्न का उत्तर दें, या जरूरत हो तो सर्जरी निर्देशों के बारे में पूछें।',
     'What is your name?': 'आपका नाम क्या है?',
     'What is your age?': 'आपकी उम्र क्या है?',
     'For example, 42': 'उदाहरण: 42',
