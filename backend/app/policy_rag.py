@@ -346,10 +346,10 @@ def should_hide_policy_sources(query: str) -> bool:
 
 
 def off_topic_redirect_answer(*, answer_recorded: bool = False) -> str:
-    prefix = "I have recorded your answer. " if answer_recorded else ""
+    prefix = "I've recorded your answer. " if answer_recorded else ""
     return (
-        f"{prefix}Let's stay focused on your pre-anesthetic assessment so I can record the right clinical details safely. "
-        "Please answer the current question, or ask me a surgery-related question if you need help."
+        f"{prefix}I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. "
+        "Please answer the current question, or ask me about surgery instructions if you need help."
     )
 
 

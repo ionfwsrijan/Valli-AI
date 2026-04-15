@@ -25,8 +25,9 @@ def test_session_creation_and_progression() -> None:
         assert progressed_payload["answers"]["history_source"] == "relative_guardian"
         assert progressed_payload["current_question"]["id"] == "patient_name"
         assert progressed_payload["current_question"]["text"] == "What's the patient's name?"
+        assert progressed_payload["transcript"][-2]["message"] == "Got it, thank you."
         assert progressed_payload["transcript"][-1]["message"] == "What's the patient's name?"
-        assert len(progressed_payload["transcript"]) == 4
+        assert len(progressed_payload["transcript"]) == 5
 
 
 def test_history_source_patient_keeps_patient_facing_identity_questions() -> None:
@@ -133,7 +134,7 @@ def test_mixed_answer_and_policy_question_keeps_assessment_on_track() -> None:
         assert payload["current_question"]["text"] == "What's your gender?"
         assert payload["current_question"]["prompt_text"] == "What's your gender?\nMale\nFemale\nOther"
         assert payload["transcript"][-1]["message"] == "What's your gender?\nMale\nFemale\nOther"
-        fasting_messages = [item["message"] for item in payload["transcript"] if "Hospital policy guidance:" in item["message"]]
+        fasting_messages = [item["message"] for item in payload["transcript"] if "fasting" in item["message"].lower()]
         assert fasting_messages
         assert all("Source:" not in message for message in fasting_messages)
 
@@ -234,7 +235,7 @@ def test_invalid_numeric_answer_keeps_same_question_and_reasks() -> None:
 
         assert session["current_question"]["id"] == "patient_age"
         assert session["answers"].get("patient_age") is None
-        assert session["transcript"][-2]["message"] == "I need your age as a number in years. For example, 42."
+        assert session["transcript"][-2]["message"] == "Thanks. I just need your age as a number in years, for example 42."
         assert session["transcript"][-1]["message"] == "What is your age?"
 
         session = client.post(
@@ -374,7 +375,7 @@ def test_off_topic_question_politely_redirects_without_consuming_answer() -> Non
         payload = off_topic_only.json()
         assert "history_source" not in payload["answers"]
         assert payload["current_question"]["id"] == "history_source"
-        assert "Let's stay focused on your pre-anesthetic assessment" in payload["transcript"][-2]["message"]
+        assert "I'm here to help with your pre-anesthetic assessment" in payload["transcript"][-2]["message"]
         assert payload["transcript"][-1]["message"] == "Who is taking the assessment?\nPatient\nRelative/Guardian\nMedical Records"
 
 
@@ -390,8 +391,8 @@ def test_mixed_answer_and_off_topic_question_records_answer_then_redirects() -> 
         payload = mixed.json()
         assert payload["answers"]["history_source"] == "patient"
         assert payload["current_question"]["id"] == "patient_name"
-        assert payload["transcript"][-2]["message"].startswith("I have recorded your answer.")
-        assert "Let's stay focused on your pre-anesthetic assessment" in payload["transcript"][-2]["message"]
+        assert payload["transcript"][-2]["message"].startswith("I've recorded your answer.")
+        assert "I'm here to help with your pre-anesthetic assessment" in payload["transcript"][-2]["message"]
         assert payload["transcript"][-1]["message"] == "What is your name?"
 
 
@@ -407,6 +408,6 @@ def test_mixed_answer_and_generic_off_topic_question_are_both_handled() -> None:
         payload = mixed.json()
         assert payload["answers"]["history_source"] == "patient"
         assert payload["current_question"]["id"] == "patient_name"
-        assert payload["transcript"][-2]["message"].startswith("I have recorded your answer.")
-        assert "Let's stay focused on your pre-anesthetic assessment" in payload["transcript"][-2]["message"]
+        assert payload["transcript"][-2]["message"].startswith("I've recorded your answer.")
+        assert "I'm here to help with your pre-anesthetic assessment" in payload["transcript"][-2]["message"]
         assert payload["transcript"][-1]["message"] == "What is your name?"

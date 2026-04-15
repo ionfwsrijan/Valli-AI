@@ -889,16 +889,16 @@ def numeric_question_rules(question: Question) -> tuple[set[str], float | None, 
 
 def numeric_validation_message(question: Question) -> str:
     if question.id == "patient_age":
-        return "I need your age as a number in years. For example, 42."
+        return "Thanks. I just need your age as a number in years, for example 42."
     if question.id == "previous_surgery_year":
-        return "I need the year as a 4-digit number. For example, 2020."
+        return "Thanks. I just need the year as a 4-digit number, for example 2020."
     if question.field.endswith("_duration_years"):
-        return "I need the number of years only. For example, 5 or 5 years."
+        return "Thanks. I just need the number of years, for example 5 or 5 years."
     if question.field.endswith("_days") or "how many days" in question.text.lower() or "number of days" in question.text.lower():
-        return "I need the number of days only. For example, 3."
+        return "Thanks. I just need the number of days, for example 3."
     if question.field == "dialysis_cycles":
-        return "I need the number of dialysis cycles only. For example, 4."
-    return "I need a number for this answer."
+        return "Thanks. I just need the number of dialysis cycles, for example 4."
+    return "Thanks. I just need a number for this answer."
 
 
 def parse_body_metrics(raw_answer: str, answers: dict[str, Any] | None = None) -> dict[str, float]:
@@ -1052,7 +1052,7 @@ def invalid_answer_message(question: Question, raw_answer: str, parsed_answer: A
     if question.input_type in {"integer", "number"} and parsed_answer is None:
         return numeric_validation_message(question)
     if question.input_type == "body_metrics" and isinstance(parsed_answer, dict) and not parsed_answer:
-        return "I need your weight and height as numbers. For example, 68 kg and 162 cm."
+        return "Thanks. I still need your weight and height as numbers, for example 68 kg and 162 cm."
     return None
 
 

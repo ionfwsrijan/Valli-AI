@@ -41,6 +41,7 @@ from .vision_airway import analyze_airway_photo, has_required_exam_captures
 
 
 BOT_GREETING = "Hello! I am Valli. You may use text or voice for taking the assessment."
+ANSWER_CONFIRMATION = "Got it, thank you."
 CAMERA_EXAM_PROMPT = (
     "The questionnaire is complete. Please continue to the camera airway assessment page using a frontal view and a side profile to finish the assessment."
 )
@@ -165,6 +166,16 @@ def format_vision_transcript_messages(vision_assessment: dict[str, Any], capture
     return messages or [f"{capture_title} camera assessment was recorded. Detailed measurements are available in the final report."]
 
 
+def should_add_answer_confirmation(routing: dict[str, Any], completed_current_question: bool) -> bool:
+    return (
+        completed_current_question
+        and routing["mode"] == "answer_only"
+        and routing.get("answer_text") is not None
+        and not routing.get("policy_question")
+        and not routing.get("interjection_message")
+    )
+
+
 def get_assessment_or_404(session_id: str, db: Session) -> AssessmentSession:
     assessment = db.get(AssessmentSession, session_id)
     if assessment is None:
@@ -252,7 +263,7 @@ def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends
         source_text = ""
         if policy["sources"] and not should_hide_policy_sources(routing["policy_question"]):
             source_text = f" Source: {', '.join(policy['sources'])}."
-        transcript.append(transcript_entry("ai", f"Hospital policy guidance: {policy['answer']}{source_text}"))
+        transcript.append(transcript_entry("ai", f"{policy['answer']}{source_text}"))
     elif routing.get("interjection_message"):
         transcript.append(transcript_entry("ai", routing["interjection_message"]))
 
@@ -265,6 +276,8 @@ def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends
             assessment.current_question_id = current.id
             assessment.status = "in_progress"
         else:
+            if should_add_answer_confirmation(routing, True):
+                transcript.append(transcript_entry("ai", ANSWER_CONFIRMATION))
             upcoming = next_question(current.id, answers)
             if upcoming is not None:
                 transcript.append(transcript_entry("ai", format_question_prompt(upcoming, answers), upcoming.id))
