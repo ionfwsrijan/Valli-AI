@@ -62,6 +62,9 @@ const UI_TEXT = {
     startAssessment: 'Start assessment',
     startNewAssessmentPrompt: 'Start a new assessment to begin the patient questionnaire.',
     currentPrompt: 'Current prompt',
+    repeatPrompt: 'Repeat',
+    rephrasePrompt: 'Rephrase',
+    slowDownPrompt: 'Slow down',
     capturedResponse: 'Captured response',
     submitCapturedResponse: 'Submit captured response',
     submitResponse: 'Submit response',
@@ -95,6 +98,9 @@ const UI_TEXT = {
     startAssessment: 'மதிப்பீட்டை தொடங்கு',
     startNewAssessmentPrompt: 'நோயாளர் கேள்வித்தாளை தொடங்க புதிய மதிப்பீட்டைத் தொடங்குங்கள்.',
     currentPrompt: 'தற்போதைய கேள்வி',
+    repeatPrompt: 'மீண்டும் சொல்',
+    rephrasePrompt: 'மாற்றிச் சொல்',
+    slowDownPrompt: 'மெதுவாக சொல்',
     capturedResponse: 'பதிவு செய்யப்பட்ட பதில்',
     submitCapturedResponse: 'பதிவு செய்யப்பட்ட பதிலை அனுப்பு',
     submitResponse: 'பதிலை அனுப்பு',
@@ -128,6 +134,9 @@ const UI_TEXT = {
     startAssessment: 'आकलन शुरू करें',
     startNewAssessmentPrompt: 'मरीज प्रश्नावली शुरू करने के लिए नया आकलन शुरू करें।',
     currentPrompt: 'वर्तमान प्रश्न',
+    repeatPrompt: 'फिर बोलें',
+    rephrasePrompt: 'आसान करके बोलें',
+    slowDownPrompt: 'धीरे बोलें',
     capturedResponse: 'रिकॉर्ड किया गया उत्तर',
     submitCapturedResponse: 'रिकॉर्ड किया गया उत्तर भेजें',
     submitResponse: 'उत्तर भेजें',
@@ -148,6 +157,12 @@ const TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
     'Hello! I am Valli. You may use text or voice for taking the assessment.':
       'வணக்கம்! நான் வள்ளி. இந்த மதிப்பீட்டிற்கு நீங்கள் உரை அல்லது குரலை பயன்படுத்தலாம்.',
     'Got it, thank you.': 'சரி, நன்றி.',
+    "I'll say that again.": 'அதை மீண்டும் சொல்கிறேன்.',
+    'Let me say that more simply.': 'அதை இன்னும் எளிமையாகச் சொல்கிறேன்.',
+    "Sure, I'll slow down.": 'சரி, நான் மெதுவாகச் சொல்கிறேன்.',
+    'Please answer yes or no.': 'தயவுசெய்து ஆம் அல்லது இல்லை என்று பதிலளிக்கவும்.',
+    'Please choose the option that fits best.': 'உங்களுக்கு பொருத்தமான தேர்வைத் தேர்ந்தெடுக்கவும்.',
+    'Your options are:': 'உங்கள் தேர்வுகள்:',
     "I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":
       'நான் உங்கள் முன்-மயக்க மதிப்பீட்டுக்கு உதவுகிறேன், அதனால் இப்போது இதிலேயே கவனம் செலுத்தலாம். தற்போதைய கேள்விக்கு பதிலளிக்கவும், அல்லது அறுவை சிகிச்சை வழிமுறைகள் பற்றி கேட்கலாம்.',
     "I've recorded your answer. I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":
@@ -310,6 +325,12 @@ const TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
     'Hello! I am Valli. You may use text or voice for taking the assessment.':
       'नमस्ते! मैं वल्ली हूँ। इस आकलन के लिए आप टेक्स्ट या आवाज़ का उपयोग कर सकते हैं।',
     'Got it, thank you.': 'ठीक है, धन्यवाद।',
+    "I'll say that again.": 'मैं इसे फिर से कहती हूँ।',
+    'Let me say that more simply.': 'मैं इसे थोड़ा आसान करके कहती हूँ।',
+    "Sure, I'll slow down.": 'ठीक है, मैं धीरे बोलती हूँ।',
+    'Please answer yes or no.': 'कृपया हाँ या नहीं में उत्तर दें।',
+    'Please choose the option that fits best.': 'कृपया जो विकल्प सबसे सही लगे, उसे चुनें।',
+    'Your options are:': 'आपके विकल्प हैं:',
     "I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":
       'मैं आपके प्री-एनेस्थेटिक आकलन में मदद करने के लिए हूँ, इसलिए अभी इसी पर ध्यान रखें। कृपया वर्तमान प्रश्न का उत्तर दें, या जरूरत हो तो सर्जरी निर्देशों के बारे में पूछें।',
     "I've recorded your answer. I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":

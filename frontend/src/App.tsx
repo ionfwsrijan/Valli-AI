@@ -30,7 +30,9 @@ import type {
 
 const GREETING_MESSAGE =
   "Hello! I am Valli. You may use text or voice for taking the assessment.";
-const SPEECH_RATE = 1.55;
+const DEFAULT_SPEECH_RATE = 1.55;
+const MIN_SPEECH_RATE = 0.95;
+const SLOW_SPEECH_STEP = 0.2;
 const SPEECH_PITCH = 1.02;
 const FEMININE_VOICE_HINTS = [
   "heera",
@@ -138,6 +140,61 @@ function spokenText(message: string) {
     .trim();
 }
 
+function joinOptionsForSpeech(options: string[], language: AppLanguage) {
+  if (!options.length) {
+    return "";
+  }
+
+  if (options.length === 1) {
+    return options[0];
+  }
+
+  const conjunction =
+    language === "ta" ? "அல்லது" : language === "hi" ? "या" : "or";
+
+  if (options.length === 2) {
+    return `${options[0]} ${conjunction} ${options[1]}`;
+  }
+
+  return `${options.slice(0, -1).join(", ")}, ${conjunction} ${options.at(-1)}`;
+}
+
+function buildRephrasedPrompt(
+  question: ReturnType<typeof localizeQuestion>,
+  inputType: string | undefined,
+  language: AppLanguage,
+) {
+  if (!question) {
+    return "";
+  }
+
+  const basePrompt = [question.text, question.helperText]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  if (!question.options.length) {
+    return basePrompt;
+  }
+
+  if (inputType === "boolean") {
+    return `${basePrompt} ${translateText(
+      "Please answer yes or no.",
+      language,
+    )}`.trim();
+  }
+
+  const optionsSummary = joinOptionsForSpeech(
+    question.options.map((option) => option.label),
+    language,
+  );
+
+  return `${basePrompt} ${translateText(
+    "Please choose the option that fits best.",
+    language,
+  )} ${translateText("Your options are:", language)} ${optionsSummary}.`.trim();
+}
+
 export default function App() {
   const [view, setView] = useState<AssessmentView>("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -159,6 +216,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [visionError, setVisionError] = useState<string | null>(null);
   const [autoSpeak, setAutoSpeak] = useState(true);
+  const [speechRate, setSpeechRate] = useState(DEFAULT_SPEECH_RATE);
   const [availableVoices, setAvailableVoices] = useState<
     SpeechSynthesisVoice[]
   >([]);
@@ -174,6 +232,9 @@ export default function App() {
     session?.current_question ?? null,
     language,
   );
+  const currentPromptForSpeech =
+    localizedCurrentQuestion?.promptText ||
+    translateText(getQuestionPrompt(session?.current_question ?? null), language);
 
   useEffect(() => {
     void refreshDashboard();
@@ -259,7 +320,11 @@ export default function App() {
     { id: "records", label: "Records" },
   ];
 
-  const speakEntries = (messages: string[], force = false) => {
+  const speakEntries = (
+    messages: string[],
+    options: { force?: boolean; rate?: number } = {},
+  ) => {
+    const { force = false, rate = speechRate } = options;
     if ((!autoSpeak && !force) || !("speechSynthesis" in window)) {
       return;
     }
@@ -286,9 +351,52 @@ export default function App() {
       } else {
         utterance.lang = speechLocale(language);
       }
-      utterance.rate = SPEECH_RATE;
+      utterance.rate = rate;
       utterance.pitch = SPEECH_PITCH;
       synth.speak(utterance);
+    });
+  };
+
+  const handleRepeatPrompt = () => {
+    if (!currentPromptForSpeech) {
+      return;
+    }
+
+    speakEntries(["I'll say that again.", currentPromptForSpeech], {
+      force: true,
+    });
+  };
+
+  const handleRephrasePrompt = () => {
+    const rephrasedPrompt = buildRephrasedPrompt(
+      localizedCurrentQuestion,
+      session?.current_question?.input_type,
+      language,
+    );
+
+    if (!rephrasedPrompt) {
+      return;
+    }
+
+    speakEntries(["Let me say that more simply.", rephrasedPrompt], {
+      force: true,
+    });
+  };
+
+  const handleSlowDownPrompt = () => {
+    if (!currentPromptForSpeech) {
+      return;
+    }
+
+    const nextRate = Math.max(
+      MIN_SPEECH_RATE,
+      Number((speechRate - SLOW_SPEECH_STEP).toFixed(2)),
+    );
+
+    setSpeechRate(nextRate);
+    speakEntries(["Sure, I'll slow down.", currentPromptForSpeech], {
+      force: true,
+      rate: nextRate,
     });
   };
 
@@ -449,7 +557,7 @@ export default function App() {
       const next = !current;
       const prompt = getQuestionPrompt(session?.current_question ?? null);
       if (next && prompt) {
-        speakEntries([prompt], true);
+        speakEntries([prompt], { force: true });
       }
       return next;
     });
@@ -751,6 +859,9 @@ export default function App() {
               onQuickAnswer={handleSubmit}
               onStart={startAssessment}
               onSubmit={handleSubmit}
+              onRepeatPrompt={handleRepeatPrompt}
+              onRephrasePrompt={handleRephrasePrompt}
+              onSlowDownPrompt={handleSlowDownPrompt}
               onToggleAutoSpeak={handleToggleAutoSpeak}
               onToggleListening={toggleListening}
               translateAiMessage={(message) => translateText(message, language)}

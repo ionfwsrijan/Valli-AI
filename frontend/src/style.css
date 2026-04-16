@@ -1,8 +1,8 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 @font-face {
-  font-family: "TT Travels Next";
-  src: url("/fonts/TT Travels Next Trial ExtraBold.ttf") format("truetype");
+  font-family: 'TT Travels Next';
+  src: url('/fonts/TT Travels Next Trial DemiBold.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -11,28 +11,14 @@
 :root {
   color: #111111;
   background:
-    radial-gradient(
-      circle at top left,
-      rgba(255, 255, 255, 0.08),
-      transparent 28%
-    ),
-    linear-gradient(
-      180deg,
-      #020202 0%,
-      #0a0a0a 24rem,
-      #f2f2f2 24rem,
-      #ffffff 100%
-    );
-  font-family: "Manrope", sans-serif;
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 28%),
+    linear-gradient(180deg, #020202 0%, #0a0a0a 24rem, #f2f2f2 24rem, #ffffff 100%);
+  font-family: 'Manrope', sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --surface: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.98),
-    rgba(244, 244, 244, 0.96)
-  );
+  --surface: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 244, 244, 0.96));
   --surface-strong: rgba(255, 255, 255, 0.99);
   --line: rgba(17, 17, 17, 0.1);
   --line-strong: rgba(255, 255, 255, 0.12);
@@ -62,7 +48,7 @@ body {
 }
 
 body::before {
-  content: "";
+  content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
@@ -109,11 +95,7 @@ textarea {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(
-      circle at top right,
-      rgba(255, 255, 255, 0.08),
-      transparent 26%
-    ),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 26%),
     linear-gradient(145deg, rgba(5, 5, 5, 0.98), rgba(22, 22, 22, 0.96));
   border: 1px solid var(--line-strong);
   border-radius: 36px;
@@ -122,14 +104,10 @@ textarea {
 }
 
 .hero-copy::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.06),
-    transparent 48%
-  );
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 48%);
   pointer-events: none;
 }
 
@@ -157,7 +135,7 @@ textarea {
 }
 
 .hero-copy h1 {
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-size: clamp(2.8rem, 5vw, 5rem);
   line-height: 0.92;
   margin: 18px 0 20px;
@@ -175,11 +153,7 @@ textarea {
 .hero-summary {
   background:
     radial-gradient(circle at top left, rgba(0, 0, 0, 0.04), transparent 30%),
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.96),
-      rgba(243, 243, 243, 0.98)
-    );
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(243, 243, 243, 0.98));
   color: var(--text);
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 36px;
@@ -223,7 +197,7 @@ textarea {
 
 .hero-summary-header h2 {
   margin: 8px 0 0;
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-size: clamp(1.7rem, 2.8vw, 2.2rem);
   line-height: 1.02;
 }
@@ -261,11 +235,7 @@ textarea {
 .hero-metric-card {
   padding: 18px;
   border-radius: 24px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.08),
-    rgba(255, 255, 255, 0.03)
-  );
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -301,11 +271,7 @@ textarea {
   align-items: start;
   padding: 14px;
   border-radius: 22px;
-  background: linear-gradient(
-    145deg,
-    rgba(8, 8, 8, 0.98),
-    rgba(26, 26, 26, 0.94)
-  );
+  background: linear-gradient(145deg, rgba(8, 8, 8, 0.98), rgba(26, 26, 26, 0.94));
   border: 1px solid rgba(255, 255, 255, 0.06);
   color: #f4f4f4;
 }
@@ -344,11 +310,7 @@ textarea {
   padding: 16px 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 28px;
-  background: linear-gradient(
-    145deg,
-    rgba(8, 8, 8, 0.92),
-    rgba(20, 20, 20, 0.92)
-  );
+  background: linear-gradient(145deg, rgba(8, 8, 8, 0.92), rgba(20, 20, 20, 0.92));
   box-shadow: var(--shadow);
   margin-bottom: 20px;
 }
@@ -523,9 +485,9 @@ textarea {
 
 .mobile-brand-title {
   color: #ffffff;
-  font-family: "TT Travels Next", "Manrope", sans-serif;
+  font-family: 'TT Travels Next', 'Manrope', sans-serif;
   font-size: 1.9rem;
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 0.95;
 }
@@ -572,11 +534,7 @@ textarea {
   display: grid;
   align-content: start;
   gap: 18px;
-  background: linear-gradient(
-    180deg,
-    rgba(8, 8, 8, 0.98),
-    rgba(20, 20, 20, 0.98)
-  );
+  background: linear-gradient(180deg, rgba(8, 8, 8, 0.98), rgba(20, 20, 20, 0.98));
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: -12px 0 36px rgba(0, 0, 0, 0.22);
 }
@@ -741,6 +699,19 @@ textarea {
   margin: 8px 0 14px;
 }
 
+.voice-aid-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.voice-aid-button {
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
 .boolean-grid,
 .choice-stack {
   display: grid;
@@ -835,11 +806,7 @@ textarea {
   padding: 18px;
   border-radius: 24px;
   background:
-    radial-gradient(
-      circle at top right,
-      rgba(255, 255, 255, 0.08),
-      transparent 32%
-    ),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 32%),
     linear-gradient(145deg, rgba(9, 9, 9, 0.97), rgba(24, 24, 24, 0.94));
   margin-bottom: 18px;
   color: #f7f7f7;
@@ -950,11 +917,7 @@ textarea {
   border-radius: 18px;
   display: grid;
   place-items: center;
-  background: linear-gradient(
-    135deg,
-    rgba(17, 17, 17, 0.08),
-    rgba(17, 17, 17, 0.14)
-  );
+  background: linear-gradient(135deg, rgba(17, 17, 17, 0.08), rgba(17, 17, 17, 0.14));
   color: var(--accent);
   font-weight: 800;
   font-size: 1.1rem;
@@ -1005,11 +968,7 @@ textarea {
 
 .report-highlight-card-primary {
   background:
-    radial-gradient(
-      circle at top right,
-      rgba(255, 255, 255, 0.08),
-      transparent 34%
-    ),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 34%),
     linear-gradient(145deg, rgba(6, 6, 6, 0.98), rgba(24, 24, 24, 0.96));
   color: #ffffff;
   border-color: transparent;
@@ -1120,11 +1079,7 @@ textarea {
   padding: 22px;
   border-radius: 28px;
   background:
-    radial-gradient(
-      circle at top right,
-      rgba(255, 255, 255, 0.08),
-      transparent 34%
-    ),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 34%),
     linear-gradient(145deg, rgba(6, 6, 6, 0.98), rgba(24, 24, 24, 0.96));
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1196,11 +1151,7 @@ textarea {
   overflow: hidden;
   border: 1px solid var(--line);
   background:
-    radial-gradient(
-      circle at 20% 20%,
-      rgba(255, 255, 255, 0.08),
-      transparent 28%
-    ),
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08), transparent 28%),
     linear-gradient(160deg, rgba(8, 8, 8, 0.96), rgba(18, 18, 18, 0.98));
 }
 
@@ -1386,23 +1337,23 @@ textarea {
     page-break-inside: avoid;
   }
 
-  body[data-print-mode="report"] .print-transcript-primary {
+  body[data-print-mode='report'] .print-transcript-primary {
     display: none !important;
   }
 
-  body[data-print-mode="transcript"] .print-report-only {
+  body[data-print-mode='transcript'] .print-report-only {
     display: none !important;
   }
 
-  body[data-print-mode="transcript"] .report-columns {
+  body[data-print-mode='transcript'] .report-columns {
     grid-template-columns: 1fr;
   }
 
-  body[data-print-mode="transcript"] .transcript-column {
+  body[data-print-mode='transcript'] .transcript-column {
     max-width: none;
   }
 
-  body[data-print-mode="transcript"] .report-transcript-card {
+  body[data-print-mode='transcript'] .report-transcript-card {
     padding: 0;
     border: none;
   }
