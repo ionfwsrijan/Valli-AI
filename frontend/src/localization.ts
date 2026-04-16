@@ -11,6 +11,7 @@ export interface LocalizedOption {
 export interface LocalizedQuestion {
   text: string
   helperText: string | null
+  whyText: string | null
   options: LocalizedOption[]
   promptText: string
 }
@@ -62,6 +63,8 @@ const UI_TEXT = {
     startAssessment: 'Start assessment',
     startNewAssessmentPrompt: 'Start a new assessment to begin the patient questionnaire.',
     currentPrompt: 'Current prompt',
+    whyAsked: 'Why am I being asked this?',
+    hideWhy: 'Hide explanation',
     repeatPrompt: 'Repeat',
     rephrasePrompt: 'Rephrase',
     slowDownPrompt: 'Slow down',
@@ -98,6 +101,8 @@ const UI_TEXT = {
     startAssessment: 'மதிப்பீட்டை தொடங்கு',
     startNewAssessmentPrompt: 'நோயாளர் கேள்வித்தாளை தொடங்க புதிய மதிப்பீட்டைத் தொடங்குங்கள்.',
     currentPrompt: 'தற்போதைய கேள்வி',
+    whyAsked: 'ஏன் இந்த கேள்வி கேட்கிறீர்கள்?',
+    hideWhy: 'விளக்கத்தை மறை',
     repeatPrompt: 'மீண்டும் சொல்',
     rephrasePrompt: 'மாற்றிச் சொல்',
     slowDownPrompt: 'மெதுவாக சொல்',
@@ -134,6 +139,8 @@ const UI_TEXT = {
     startAssessment: 'आकलन शुरू करें',
     startNewAssessmentPrompt: 'मरीज प्रश्नावली शुरू करने के लिए नया आकलन शुरू करें।',
     currentPrompt: 'वर्तमान प्रश्न',
+    whyAsked: 'मुझसे यह क्यों पूछा जा रहा है?',
+    hideWhy: 'व्याख्या छुपाएँ',
     repeatPrompt: 'फिर बोलें',
     rephrasePrompt: 'आसान करके बोलें',
     slowDownPrompt: 'धीरे बोलें',
@@ -151,6 +158,87 @@ const UI_TEXT = {
       'आप यहाँ अस्पताल नीति से जुड़े प्रश्न भी पूछ सकते हैं, जैसे उपवास या घर वापस जाने की व्यवस्था। सहायक उपलब्ध नीति जानकारी का उपयोग करके उत्तर देगा और आकलन को जारी रखेगा।',
   },
 } as const
+
+const WHY_HELPERS: Record<AppLanguage, Record<string, string>> = {
+  en: {
+    history_source:
+      'This helps me frame the questions correctly and know whether I should ask about you or about the patient.',
+    patient_age:
+      'Age changes anesthesia planning and helps me understand safety risks before surgery.',
+    body_metrics:
+      'Weight and height help me calculate BMI and guide anesthesia dose and airway risk checks.',
+    preoperative_diagnosis:
+      'I ask this so the anesthesia team knows the medical problem the surgery is being done for.',
+    proposed_procedure:
+      'This tells me what operation is planned, which affects anesthesia preparation.',
+    previous_surgery:
+      'Past surgery and anesthesia history can reveal problems that matter again today.',
+    drug_allergies:
+      'Medicine allergies matter because the anesthesia team must avoid unsafe drugs.',
+    smoking_history:
+      'Smoking can affect breathing, oxygen levels, and recovery after anesthesia.',
+    breathlessness:
+      'Breathlessness can point to heart or lung strain, which changes anesthesia risk.',
+    nyha_class:
+      'This helps me understand how much activity causes symptoms so the team can judge heart-related risk.',
+    snoring_history:
+      'Snoring can be a clue to sleep apnea, which can affect breathing during anesthesia.',
+    mmrc_grade:
+      'This helps me understand how much breathlessness affects daily life before surgery.',
+  },
+  ta: {
+    history_source:
+      'கேள்விகளை சரியாக அமைக்கவும், நான் உங்களைப் பற்றிக் கேட்கிறேனா அல்லது நோயாளியைப் பற்றிக் கேட்கிறேனா என்பதை தெரிந்துகொள்ளவும் இது உதவும்.',
+    patient_age:
+      'வயது மயக்கத் திட்டத்தை பாதிக்கிறது, மேலும் அறுவை சிகிச்சைக்கு முன் பாதுகாப்பு அபாயங்களை புரிந்துகொள்ள உதவும்.',
+    body_metrics:
+      'எடை மற்றும் உயரம் BMI-ஐ கணக்கிடவும், மயக்க மருந்தளவு மற்றும் காற்றுப்பாதை அபாயத்தை மதிப்பிடவும் உதவும்.',
+    preoperative_diagnosis:
+      'அறுவை சிகிச்சை எந்த மருத்துவ பிரச்சினைக்காக செய்யப்படுகிறது என்பதை மயக்கக் குழுவுக்கு தெரிய இதை கேட்கிறேன்.',
+    proposed_procedure:
+      'எந்த அறுவை சிகிச்சை செய்யப்பட உள்ளது என்பதை இது காட்டும்; அதன்படி மயக்கத் தயாரிப்பு மாறும்.',
+    previous_surgery:
+      'முன்னைய அறுவை சிகிச்சை அல்லது மயக்க அனுபவம் இன்று மீண்டும் முக்கியமான சிக்கல்களை காட்டலாம்.',
+    drug_allergies:
+      'மருந்து ஒவ்வாமை இருந்தால் பாதுகாப்பற்ற மருந்துகளை தவிர்க்க மயக்கக் குழுவுக்கு தெரிந்திருக்க வேண்டும்.',
+    smoking_history:
+      'புகைத்தல் சுவாசம், ஆக்சிஜன் நிலை, மற்றும் மயக்கத்திற்குப் பிறகான மீட்பை பாதிக்கலாம்.',
+    breathlessness:
+      'மூச்சுத்திணறல் இதயம் அல்லது நுரையீரல் சிரமத்தை காட்டலாம்; அது மயக்க அபாயத்தை மாற்றும்.',
+    nyha_class:
+      'எவ்வளவு செயல்பாட்டில் அறிகுறிகள் வருகிறது என்பதை இது காட்டும்; அதனால் இதய அபாயத்தை மதிப்பிட முடியும்.',
+    snoring_history:
+      'குறட்டை தூக்கத்தில் சுவாச தடை இருப்பதற்கான அறிகுறியாக இருக்கலாம்; அது மயக்கத்தின் போது முக்கியம்.',
+    mmrc_grade:
+      'மூச்சுத்திணறல் தினசரி வாழ்க்கையை எவ்வளவு பாதிக்கிறது என்பதை இது புரிந்துகொள்ள உதவும்.',
+  },
+  hi: {
+    history_source:
+      'इससे मैं प्रश्न सही तरीके से पूछ पाती हूँ और समझ पाती हूँ कि मुझे आपसे पूछना है या मरीज के बारे में पूछना है।',
+    patient_age:
+      'उम्र एनेस्थीसिया की योजना बदल सकती है और सर्जरी से पहले सुरक्षा जोखिम समझने में मदद करती है।',
+    body_metrics:
+      'वजन और लंबाई से BMI निकलता है, और इससे दवा की योजना तथा एयरवे जोखिम समझने में मदद मिलती है।',
+    preoperative_diagnosis:
+      'मैं यह इसलिए पूछती हूँ ताकि एनेस्थीसिया टीम को पता रहे कि सर्जरी किस समस्या के लिए हो रही है।',
+    proposed_procedure:
+      'इससे पता चलता है कि कौन-सी सर्जरी होने वाली है, और उसी के अनुसार तैयारी बदलती है।',
+    previous_surgery:
+      'पुरानी सर्जरी या एनेस्थीसिया का अनुभव आज के लिए भी महत्वपूर्ण संकेत दे सकता है।',
+    drug_allergies:
+      'दवा से एलर्जी जानना जरूरी है ताकि एनेस्थीसिया टीम असुरक्षित दवाओं से बचे।',
+    smoking_history:
+      'धूम्रपान सांस, ऑक्सीजन स्तर और एनेस्थीसिया के बाद रिकवरी को प्रभावित कर सकता है।',
+    breathlessness:
+      'सांस फूलना दिल या फेफड़ों पर असर का संकेत हो सकता है, जिससे एनेस्थीसिया जोखिम बदलता है।',
+    nyha_class:
+      'इससे पता चलता है कि कितनी गतिविधि पर लक्षण आते हैं, ताकि दिल से जुड़े जोखिम का अंदाज़ा लगाया जा सके।',
+    snoring_history:
+      'खर्राटे स्लीप एपनिया का संकेत हो सकते हैं, जो एनेस्थीसिया के दौरान सांस पर असर डाल सकता है।',
+    mmrc_grade:
+      'इससे समझने में मदद मिलती है कि सांस फूलना रोज़मर्रा की ज़िंदगी को कितना प्रभावित करता है।',
+  },
+}
 
 const TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
   ta: {
@@ -618,6 +706,7 @@ export function localizeQuestion(question: QuestionPayload | null, language: App
   return {
     text,
     helperText,
+    whyText: WHY_HELPERS[language][question.id] ?? null,
     options: localizedOptions,
     promptText: promptParts.join('\n'),
   }

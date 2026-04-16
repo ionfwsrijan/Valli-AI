@@ -699,6 +699,32 @@ textarea {
   margin: 8px 0 14px;
 }
 
+.trust-helper-shell {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.trust-helper-button {
+  width: fit-content;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.trust-helper-card {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(17, 17, 17, 0.05);
+  border: 1px solid rgba(17, 17, 17, 0.08);
+}
+
+.trust-helper-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 .voice-aid-row {
   display: flex;
   flex-wrap: wrap;

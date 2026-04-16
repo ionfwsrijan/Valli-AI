@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 import type { LocalizedQuestion } from '../localization'
 import type { SessionSnapshot } from '../types'
 
@@ -15,6 +17,8 @@ interface ConversationViewProps {
     startAssessment: string
     startNewAssessmentPrompt: string
     currentPrompt: string
+    whyAsked: string
+    hideWhy: string
     repeatPrompt: string
     rephrasePrompt: string
     slowDownPrompt: string
@@ -88,6 +92,7 @@ export function ConversationView({
   onToggleAutoSpeak,
   translateAiMessage,
 }: ConversationViewProps) {
+  const [showWhyHelper, setShowWhyHelper] = useState(false)
   const progress = session ? `${session.progress_completed}/${session.progress_total}` : '0/0'
   const isComplete = session?.status === 'completed'
   const currentQuestion = session?.current_question
@@ -95,6 +100,10 @@ export function ConversationView({
   const isBooleanQuestion = currentQuestion?.input_type === 'boolean'
   const isChoiceQuestion = currentQuestion?.input_type === 'choice'
   const usesQuickActions = isBooleanQuestion || isChoiceQuestion
+
+  useEffect(() => {
+    setShowWhyHelper(false)
+  }, [currentQuestion?.id])
 
   return (
     <section className="panel panel-conversation">
@@ -140,6 +149,23 @@ export function ConversationView({
                 {labels.currentPrompt}
               </span>
               <div className="current-question">{currentPrompt}</div>
+              {localizedQuestion?.whyText ? (
+                <div className="trust-helper-shell">
+                  <button
+                    className="ghost-button trust-helper-button"
+                    type="button"
+                    onClick={() => setShowWhyHelper((current) => !current)}
+                    disabled={busy}
+                  >
+                    {showWhyHelper ? labels.hideWhy : labels.whyAsked}
+                  </button>
+                  {showWhyHelper ? (
+                    <div className="trust-helper-card">
+                      <p>{localizedQuestion.whyText}</p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               <div className="voice-aid-row">
                 <button
                   className="secondary-button voice-aid-button"
