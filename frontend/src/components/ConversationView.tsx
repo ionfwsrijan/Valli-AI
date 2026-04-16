@@ -15,6 +15,10 @@ interface ConversationViewProps {
     voicePromptsOn: string
     voicePromptsOff: string
     startAssessment: string
+    resumeAssessment: string
+    resumeHelper: string
+    nextQuestion: string
+    resumeCameraExam: string
     startNewAssessmentPrompt: string
     currentPrompt: string
     whyAsked: string
@@ -38,10 +42,13 @@ interface ConversationViewProps {
   session: SessionSnapshot | null
   autoSpeak: boolean
   needsCameraExam: boolean
+  resumablePrompt: string | null
+  resumableHeading: string | null
   onDraftChange: (value: string) => void
   onQuickAnswer: (value: string) => void
   onSubmit: () => void
   onStart: () => void
+  onResume: () => void
   onRepeatPrompt: () => void
   onRephrasePrompt: () => void
   onSlowDownPrompt: () => void
@@ -81,10 +88,13 @@ export function ConversationView({
   session,
   autoSpeak,
   needsCameraExam,
+  resumablePrompt,
+  resumableHeading,
   onDraftChange,
   onQuickAnswer,
   onSubmit,
   onStart,
+  onResume,
   onRepeatPrompt,
   onRephrasePrompt,
   onSlowDownPrompt,
@@ -119,12 +129,34 @@ export function ConversationView({
 
       {!session ? (
         <div className="empty-state">
-          <p>
-            {labels.startNewAssessmentPrompt}
-          </p>
-          <button className="primary-button" type="button" onClick={onStart} disabled={busy}>
-            {labels.startAssessment}
-          </button>
+          {resumablePrompt ? (
+            <div className="resume-callout">
+              <p>{labels.resumeHelper}</p>
+              <div className="resume-callout-card">
+                <span className="composer-label">
+                  {resumableHeading ?? labels.nextQuestion}
+                </span>
+                <strong>{resumablePrompt}</strong>
+              </div>
+              <div className="composer-actions">
+                <button className="primary-button" type="button" onClick={onResume} disabled={busy}>
+                  {labels.resumeAssessment}
+                </button>
+                <button className="ghost-button" type="button" onClick={onStart} disabled={busy}>
+                  {labels.startAssessment}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p>
+                {labels.startNewAssessmentPrompt}
+              </p>
+              <button className="primary-button" type="button" onClick={onStart} disabled={busy}>
+                {labels.startAssessment}
+              </button>
+            </>
+          )}
         </div>
       ) : (
         <>
