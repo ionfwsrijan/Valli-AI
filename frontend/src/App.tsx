@@ -34,6 +34,8 @@ const DEFAULT_SPEECH_RATE = 1.55;
 const MIN_SPEECH_RATE = 0.95;
 const SLOW_SPEECH_STEP = 0.2;
 const SPEECH_PITCH = 1.02;
+const ACTIVE_SESSION_STORAGE_KEY = "valli-active-session-id";
+const DRAFT_STORAGE_PREFIX = "valli-draft";
 const FEMININE_VOICE_HINTS = [
   "heera",
   "zira",
@@ -140,6 +142,10 @@ function spokenText(message: string) {
     .trim();
 }
 
+function draftStorageKey(sessionId: string, questionId: string) {
+  return `${DRAFT_STORAGE_PREFIX}:${sessionId}:${questionId}`;
+}
+
 function joinOptionsForSpeech(options: string[], language: AppLanguage) {
   if (!options.length) {
     return "";
@@ -217,6 +223,9 @@ export default function App() {
   const [visionError, setVisionError] = useState<string | null>(null);
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [speechRate, setSpeechRate] = useState(DEFAULT_SPEECH_RATE);
+  const [resumableSession, setResumableSession] = useState<SessionSnapshot | null>(
+    null,
+  );
   const [availableVoices, setAvailableVoices] = useState<
     SpeechSynthesisVoice[]
   >([]);
@@ -235,9 +244,24 @@ export default function App() {
   const currentPromptForSpeech =
     localizedCurrentQuestion?.promptText ||
     translateText(getQuestionPrompt(session?.current_question ?? null), language);
+  const localizedResumableQuestion = localizeQuestion(
+    resumableSession?.current_question ?? null,
+    language,
+  );
+  const resumablePrompt =
+    localizedResumableQuestion?.text ||
+    (resumableSession?.status === "awaiting_exam"
+      ? labels.resumeCameraExam
+      : null);
+  const resumableHeading = resumableSession
+    ? resumableSession.status === "awaiting_exam"
+      ? labels.resumeCameraExam
+      : labels.nextQuestion
+    : null;
 
   useEffect(() => {
     void refreshDashboard();
+    void hydrateResumableSession();
   }, []);
 
   useEffect(() => {
@@ -276,10 +300,67 @@ export default function App() {
   }, [speech.transcript]);
 
   useEffect(() => {
-    setDraftAnswer("");
     speech.resetTranscript();
     speech.stopListening();
-  }, [currentQuestionId]);
+    if (
+      typeof window === "undefined" ||
+      !session?.session_id ||
+      !currentQuestionId
+    ) {
+      setDraftAnswer("");
+      return;
+    }
+
+    setDraftAnswer(
+      window.localStorage.getItem(
+        draftStorageKey(session.session_id, currentQuestionId),
+      ) ?? "",
+    );
+  }, [currentQuestionId, session?.session_id]);
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !session?.session_id ||
+      !currentQuestionId
+    ) {
+      return;
+    }
+
+    const key = draftStorageKey(session.session_id, currentQuestionId);
+    if (draftAnswer.trim()) {
+      window.localStorage.setItem(key, draftAnswer);
+      return;
+    }
+
+    window.localStorage.removeItem(key);
+  }, [currentQuestionId, draftAnswer, session?.session_id]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const storedSessionId = window.localStorage.getItem(
+      ACTIVE_SESSION_STORAGE_KEY,
+    );
+
+    if (session && session.status !== "completed") {
+      window.localStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, session.session_id);
+      setResumableSession(session);
+      return;
+    }
+
+    if (
+      session?.status === "completed" &&
+      storedSessionId === session.session_id
+    ) {
+      window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+      setResumableSession((current) =>
+        current?.session_id === session.session_id ? null : current,
+      );
+    }
+  }, [session]);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -308,6 +389,33 @@ export default function App() {
           ? requestError.message
           : "Unable to load dashboard",
       );
+    }
+  };
+
+  const hydrateResumableSession = async () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const storedSessionId = window.localStorage.getItem(
+      ACTIVE_SESSION_STORAGE_KEY,
+    );
+    if (!storedSessionId) {
+      return;
+    }
+
+    try {
+      const savedSession = await fetchSession(storedSessionId);
+      if (savedSession.status === "completed") {
+        window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+        setResumableSession(null);
+        return;
+      }
+
+      setResumableSession(savedSession);
+    } catch {
+      window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+      setResumableSession(null);
     }
   };
 
@@ -421,6 +529,51 @@ export default function App() {
           ? requestError.message
           : "Unable to start assessment",
       );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resumeAssessment = async () => {
+    const resumableSessionId = resumableSession?.session_id;
+    if (!resumableSessionId) {
+      return;
+    }
+
+    setMobileMenuOpen(false);
+    setBusy(true);
+    setError(null);
+    setVisionError(null);
+    setReport(null);
+
+    try {
+      const resumed = await fetchSession(resumableSessionId);
+      if (resumed.status === "completed") {
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+        }
+        setResumableSession(null);
+        return;
+      }
+
+      setSession(resumed);
+      setView(resumed.status === "awaiting_exam" ? "camera" : "assessment");
+
+      if (resumed.current_question) {
+        speakEntries([getQuestionPrompt(resumed.current_question)], {
+          force: true,
+        });
+      }
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to resume assessment",
+      );
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+      }
+      setResumableSession(null);
     } finally {
       setBusy(false);
     }
@@ -734,6 +887,16 @@ export default function App() {
             <h1>{t("Pre-anesthetic assessment for patient intake and airway screening.")}</h1>
             <p>{t("Conduct the patient interview, complete the camera-based airway examination, and generate the final assessment report from one streamlined workflow.")}</p>
             <div className="hero-actions">
+              {resumablePrompt ? (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={resumeAssessment}
+                  disabled={busy}
+                >
+                  {labels.resumeAssessment}
+                </button>
+              ) : null}
               <button
                 className="primary-button hero-primary"
                 type="button"
@@ -854,10 +1017,13 @@ export default function App() {
               labels={labels}
               localizedQuestion={localizedCurrentQuestion}
               needsCameraExam={needsCameraExam}
+              resumablePrompt={resumablePrompt}
+              resumableHeading={resumableHeading}
               session={session}
               onDraftChange={setDraftAnswer}
               onQuickAnswer={handleSubmit}
               onStart={startAssessment}
+              onResume={resumeAssessment}
               onSubmit={handleSubmit}
               onRepeatPrompt={handleRepeatPrompt}
               onRephrasePrompt={handleRephrasePrompt}

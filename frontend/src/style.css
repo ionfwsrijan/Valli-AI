@@ -906,6 +906,28 @@ textarea {
   color: var(--muted);
 }
 
+.resume-callout {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+}
+
+.resume-callout-card {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 440px);
+  padding: 16px;
+  text-align: left;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.resume-callout-card strong {
+  color: var(--text);
+  line-height: 1.5;
+}
+
 .empty-state.compact {
   min-height: 140px;
 }
