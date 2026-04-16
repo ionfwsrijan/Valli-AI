@@ -15,6 +15,9 @@ interface ConversationViewProps {
     startAssessment: string
     startNewAssessmentPrompt: string
     currentPrompt: string
+    repeatPrompt: string
+    rephrasePrompt: string
+    slowDownPrompt: string
     capturedResponse: string
     submitCapturedResponse: string
     submitResponse: string
@@ -35,6 +38,9 @@ interface ConversationViewProps {
   onQuickAnswer: (value: string) => void
   onSubmit: () => void
   onStart: () => void
+  onRepeatPrompt: () => void
+  onRephrasePrompt: () => void
+  onSlowDownPrompt: () => void
   onToggleListening: () => void
   onToggleAutoSpeak: () => void
   translateAiMessage: (message: string) => string
@@ -75,6 +81,9 @@ export function ConversationView({
   onQuickAnswer,
   onSubmit,
   onStart,
+  onRepeatPrompt,
+  onRephrasePrompt,
+  onSlowDownPrompt,
   onToggleListening,
   onToggleAutoSpeak,
   translateAiMessage,
@@ -131,6 +140,32 @@ export function ConversationView({
                 {labels.currentPrompt}
               </span>
               <div className="current-question">{currentPrompt}</div>
+              <div className="voice-aid-row">
+                <button
+                  className="secondary-button voice-aid-button"
+                  type="button"
+                  onClick={onRepeatPrompt}
+                  disabled={busy}
+                >
+                  {labels.repeatPrompt}
+                </button>
+                <button
+                  className="secondary-button voice-aid-button"
+                  type="button"
+                  onClick={onRephrasePrompt}
+                  disabled={busy}
+                >
+                  {labels.rephrasePrompt}
+                </button>
+                <button
+                  className="secondary-button voice-aid-button"
+                  type="button"
+                  onClick={onSlowDownPrompt}
+                  disabled={busy}
+                >
+                  {labels.slowDownPrompt}
+                </button>
+              </div>
 
               {usesQuickActions ? (
                 <>
