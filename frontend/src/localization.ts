@@ -61,6 +61,9 @@ const UI_TEXT = {
     voicePromptsOn: 'Voice prompts on',
     voicePromptsOff: 'Voice prompts off',
     startAssessment: 'Start assessment',
+    startingAssessment: 'Starting assessment...',
+    startingAssessmentHelper:
+      'Opening your assessment now. If this is the first request in a while, it may take a few seconds.',
     resumeAssessment: 'Resume assessment',
     resumeHelper: 'Continue where you left off.',
     nextQuestion: 'Next question',
@@ -103,6 +106,9 @@ const UI_TEXT = {
     voicePromptsOn: 'குரல் வழிகாட்டுதல் இயங்குகிறது',
     voicePromptsOff: 'குரல் வழிகாட்டுதல் நிறுத்தப்பட்டது',
     startAssessment: 'மதிப்பீட்டை தொடங்கு',
+    startingAssessment: 'மதிப்பீடு தொடங்குகிறது...',
+    startingAssessmentHelper:
+      'உங்கள் மதிப்பீடு திறக்கப்படுகிறது. சில நேரம் பயன்பாடு அமைதியாக இருந்திருந்தால் இது சில வினாடிகள் எடுக்கலாம்.',
     resumeAssessment: 'மதிப்பீட்டைத் தொடர்க',
     resumeHelper: 'நீங்கள் நிறுத்திய இடத்திலிருந்து தொடருங்கள்.',
     nextQuestion: 'அடுத்த கேள்வி',
@@ -145,6 +151,9 @@ const UI_TEXT = {
     voicePromptsOn: 'वॉइस प्रॉम्प्ट चालू',
     voicePromptsOff: 'वॉइस प्रॉम्प्ट बंद',
     startAssessment: 'आकलन शुरू करें',
+    startingAssessment: 'आकलन शुरू हो रहा है...',
+    startingAssessmentHelper:
+      'आपका आकलन खोला जा रहा है। अगर कुछ समय से कोई अनुरोध नहीं गया था, तो इसमें कुछ सेकंड लग सकते हैं।',
     resumeAssessment: 'आकलन फिर शुरू करें',
     resumeHelper: 'जहाँ छोड़ा था वहीं से जारी रखें।',
     nextQuestion: 'अगला प्रश्न',

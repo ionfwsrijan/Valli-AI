@@ -7,6 +7,7 @@ import {
   fetchSessions,
   submitAnswer,
   submitVisionAirwayCapture,
+  warmBackend,
 } from "./api";
 import { AirwayVisionCard } from "./components/AirwayVisionCard";
 import { ConversationView } from "./components/ConversationView";
@@ -223,8 +224,9 @@ export default function App() {
   const [visionError, setVisionError] = useState<string | null>(null);
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [speechRate, setSpeechRate] = useState(DEFAULT_SPEECH_RATE);
-  const [resumableSession, setResumableSession] =
-    useState<SessionSnapshot | null>(null);
+  const [resumableSession, setResumableSession] = useState<SessionSnapshot | null>(
+    null,
+  );
   const [availableVoices, setAvailableVoices] = useState<
     SpeechSynthesisVoice[]
   >([]);
@@ -242,10 +244,7 @@ export default function App() {
   );
   const currentPromptForSpeech =
     localizedCurrentQuestion?.promptText ||
-    translateText(
-      getQuestionPrompt(session?.current_question ?? null),
-      language,
-    );
+    translateText(getQuestionPrompt(session?.current_question ?? null), language);
   const localizedResumableQuestion = localizeQuestion(
     resumableSession?.current_question ?? null,
     language,
@@ -264,6 +263,7 @@ export default function App() {
   useEffect(() => {
     void refreshDashboard();
     void hydrateResumableSession();
+    void warmBackend().catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -348,10 +348,7 @@ export default function App() {
     );
 
     if (session && session.status !== "completed") {
-      window.localStorage.setItem(
-        ACTIVE_SESSION_STORAGE_KEY,
-        session.session_id,
-      );
+      window.localStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, session.session_id);
       setResumableSession(session);
       return;
     }
@@ -524,12 +521,10 @@ export default function App() {
     setView("assessment");
 
     try {
+      await warmBackend().catch(() => undefined);
       const created = await createSession();
       setSession(created);
-      speakEntries([
-        GREETING_MESSAGE,
-        getQuestionPrompt(created.current_question),
-      ]);
+      speakEntries([GREETING_MESSAGE, getQuestionPrompt(created.current_question)]);
       await refreshDashboard();
     } catch (requestError) {
       setError(
@@ -603,7 +598,10 @@ export default function App() {
     setError(null);
 
     try {
-      const updated = await submitAnswer(session.session_id, answerText);
+      const updated = await submitAnswer(
+        session.session_id,
+        answerText,
+      );
       setSession(updated);
       setDraftAnswer("");
       speech.resetTranscript();
@@ -784,9 +782,7 @@ export default function App() {
               className="language-select"
               id="language-select"
               value={language}
-              onChange={(event) =>
-                setLanguage(event.target.value as AppLanguage)
-              }
+              onChange={(event) => setLanguage(event.target.value as AppLanguage)}
             >
               <option value="en">{labels.english}</option>
               <option value="ta">{labels.tamil}</option>
@@ -855,18 +851,13 @@ export default function App() {
             </div>
 
             <div className="mobile-drawer-section">
-              <label
-                className="language-toggle"
-                htmlFor="mobile-language-select"
-              >
+              <label className="language-toggle" htmlFor="mobile-language-select">
                 <span className="language-label">{labels.language}</span>
                 <select
                   className="language-select"
                   id="mobile-language-select"
                   value={language}
-                  onChange={(event) =>
-                    setLanguage(event.target.value as AppLanguage)
-                  }
+                  onChange={(event) => setLanguage(event.target.value as AppLanguage)}
                 >
                   <option value="en">{labels.english}</option>
                   <option value="ta">{labels.tamil}</option>
@@ -894,16 +885,10 @@ export default function App() {
           <div className="hero-copy">
             <div className="hero-kicker-row">
               <span className="eyebrow">Valli</span>
-              <span className="hero-chip">
-                {t("Pre-Anesthetic Assessment")}
-              </span>
+              <span className="hero-chip">{t("Pre-Anesthetic Assessment")}</span>
             </div>
-            <h1>{t("AI assisted pre operative assessment.")}</h1>
-            <p>
-              {t(
-                "Conduct the patient interview, complete the camera-based airway examination, and generate the final assessment report from one streamlined workflow.",
-              )}
-            </p>
+            <h1>{t("Pre-anesthetic assessment for patient intake and airway screening.")}</h1>
+            <p>{t("Conduct the patient interview, complete the camera-based airway examination, and generate the final assessment report from one streamlined workflow.")}</p>
             <div className="hero-actions">
               {resumablePrompt ? (
                 <button
@@ -935,29 +920,17 @@ export default function App() {
               <article className="hero-metric-card">
                 <span>{t("Interview")}</span>
                 <strong>{t("Guided patient intake")}</strong>
-                <p>
-                  {t(
-                    "Collect the full pre-anesthetic history with text or voice input.",
-                  )}
-                </p>
+                <p>{t("Collect the full pre-anesthetic history with text or voice input.")}</p>
               </article>
               <article className="hero-metric-card">
                 <span>{t("Camera")}</span>
                 <strong>{t("Airway examination")}</strong>
-                <p>
-                  {t(
-                    "Capture the frontal and side-profile views after the questionnaire is complete.",
-                  )}
-                </p>
+                <p>{t("Capture the frontal and side-profile views after the questionnaire is complete.")}</p>
               </article>
               <article className="hero-metric-card">
                 <span>{t("Report")}</span>
                 <strong>{t("Printable final summary")}</strong>
-                <p>
-                  {t(
-                    "Review the transcript, camera findings, and final report in one place.",
-                  )}
-                </p>
+                <p>{t("Review the transcript, camera findings, and final report in one place.")}</p>
               </article>
             </div>
           </div>
@@ -965,47 +938,29 @@ export default function App() {
           <div className="hero-summary">
             <div className="hero-summary-header">
               <p className="eyebrow">{t("Workflow")}</p>
-              <h2>
-                {t("Move from intake to camera examination to final report.")}
-              </h2>
+              <h2>{t("Move from intake to camera examination to final report.")}</h2>
             </div>
 
             <div className="hero-summary-grid">
               <div className="summary-card">
                 <span>{t("Assessment")}</span>
                 <strong>{t("Patient questionnaire")}</strong>
-                <p>
-                  {t(
-                    "Answer the interview questions in sequence and capture the full transcript.",
-                  )}
-                </p>
+                <p>{t("Answer the interview questions in sequence and capture the full transcript.")}</p>
               </div>
               <div className="summary-card">
                 <span>{t("Camera")}</span>
                 <strong>{t("Dedicated airway page")}</strong>
-                <p>
-                  {t(
-                    "Switch to the camera page after the questionnaire for the image-based examination.",
-                  )}
-                </p>
+                <p>{t("Switch to the camera page after the questionnaire for the image-based examination.")}</p>
               </div>
               <div className="summary-card">
                 <span>{t("Report")}</span>
                 <strong>{t("Separated findings")}</strong>
-                <p>
-                  {t(
-                    "Review the transcript and camera findings separately in the final report.",
-                  )}
-                </p>
+                <p>{t("Review the transcript and camera findings separately in the final report.")}</p>
               </div>
               <div className="summary-card">
                 <span>{t("Records")}</span>
                 <strong>{t("Completed assessments only")}</strong>
-                <p>
-                  {t(
-                    "Open previously completed reports from the records page.",
-                  )}
-                </p>
+                <p>{t("Open previously completed reports from the records page.")}</p>
               </div>
             </div>
 
@@ -1014,33 +969,21 @@ export default function App() {
                 <span className="hero-rail-index">01</span>
                 <div>
                   <strong>{t("Assessment")}</strong>
-                  <p>
-                    {t(
-                      "Start the interview and complete the patient questionnaire.",
-                    )}
-                  </p>
+                  <p>{t("Start the interview and complete the patient questionnaire.")}</p>
                 </div>
               </article>
               <article className="hero-rail-item">
                 <span className="hero-rail-index">02</span>
                 <div>
                   <strong>{t("Camera")}</strong>
-                  <p>
-                    {t(
-                      "Move to the separate camera page for the airway examination.",
-                    )}
-                  </p>
+                  <p>{t("Move to the separate camera page for the airway examination.")}</p>
                 </div>
               </article>
               <article className="hero-rail-item">
                 <span className="hero-rail-index">03</span>
                 <div>
                   <strong>{t("Report")}</strong>
-                  <p>
-                    {t(
-                      "Generate and print the final transcript and report after completion.",
-                    )}
-                  </p>
+                  <p>{t("Generate and print the final transcript and report after completion.")}</p>
                 </div>
               </article>
             </div>

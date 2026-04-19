@@ -15,6 +15,8 @@ interface ConversationViewProps {
     voicePromptsOn: string
     voicePromptsOff: string
     startAssessment: string
+    startingAssessment: string
+    startingAssessmentHelper: string
     resumeAssessment: string
     resumeHelper: string
     nextQuestion: string
@@ -150,10 +152,10 @@ export function ConversationView({
           ) : (
             <>
               <p>
-                {labels.startNewAssessmentPrompt}
+                {busy ? labels.startingAssessmentHelper : labels.startNewAssessmentPrompt}
               </p>
               <button className="primary-button" type="button" onClick={onStart} disabled={busy}>
-                {labels.startAssessment}
+                {busy ? labels.startingAssessment : labels.startAssessment}
               </button>
             </>
           )}

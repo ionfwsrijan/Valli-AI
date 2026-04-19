@@ -26,6 +26,10 @@ export function createSession(): Promise<SessionSnapshot> {
   })
 }
 
+export function warmBackend(): Promise<{ status: string }> {
+  return request<{ status: string }>('/api/health')
+}
+
 export function submitAnswer(sessionId: string, answerText: string): Promise<SessionSnapshot> {
   return request<SessionSnapshot>(`/api/sessions/${sessionId}/answer`, {
     method: 'POST',
