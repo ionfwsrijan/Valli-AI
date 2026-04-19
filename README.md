@@ -1,6 +1,6 @@
 # Healthcare AI Driven Conversational Pre-Anesthetic Assessment Application
 
-This is a full-stack hackathon-ready prototype for a voice-first pre-anesthetic assessment workflow. It converts the PAC history flow you shared into a conversational interview, stores the clinician-patient dialogue verbatim, and generates live decision-support outputs for ASA status, STOP-Bang screening, airway risk, and contextual perioperative flags.
+A voice-first pre-anesthetic assessment workflow. It converts the PAC history flow you shared into a conversational interview, stores the clinician-patient dialogue verbatim, and generates live decision-support outputs for ASA status, STOP-Bang screening, airway risk, and contextual perioperative flags.
 
 The current build now uses all three AI layers you asked for:
 
