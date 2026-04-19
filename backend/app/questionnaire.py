@@ -638,7 +638,7 @@ FINAL_QUESTIONS = [
     Question(
         "anesthesiologist_suggestions",
         "anesthesiologist_suggestions",
-        "Do you have any suggestions for the anesthesiologist?",
+        "Is there any medical or personal information you would like your anesthetist to be aware of?",
         "Final Notes",
     ),
 ]

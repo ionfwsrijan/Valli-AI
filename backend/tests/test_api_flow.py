@@ -97,7 +97,7 @@ def test_questionnaire_defers_airway_exam_to_camera_stage() -> None:
     assert QUESTION_MAP["palpitations"].text == "Do you have any history of irregular heart beats?"
     assert QUESTION_MAP["recent_fever"].text == "Did you have any history of fever in the recent past?"
     assert QUESTION_MAP["recent_cough"].text == "Did you have a history of cough with or without discharge in the recent past?"
-    assert QUESTION_MAP["anesthesiologist_suggestions"].text == "Do you have any suggestions for the anesthesiologist?"
+    assert QUESTION_MAP["anesthesiologist_suggestions"].text == "Is there any medical or personal information you would like your anesthetist to be aware of?"
 
 
 def test_incomplete_sessions_are_hidden_from_records() -> None:
