@@ -208,8 +208,18 @@ PATIENT_IDENTITY_QUESTIONS = [
         "body_metrics",
         helper_text="For example: 68 kg and 162 cm.",
     ),
-    Question("preoperative_diagnosis", "preoperative_diagnosis", "What is the pre-operative diagnosis?", "Patient Details"),
-    Question("proposed_procedure", "proposed_procedure", "What is the proposed procedure?", "Patient Details"),
+    Question(
+        "preoperative_diagnosis",
+        "preoperative_diagnosis",
+        "What health problem are you being treated for?",
+        "Patient Details",
+    ),
+    Question(
+        "proposed_procedure",
+        "proposed_procedure",
+        "What surgery or treatment are you going to have?",
+        "Patient Details",
+    ),
 ]
 
 
