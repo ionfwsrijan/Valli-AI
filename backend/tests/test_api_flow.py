@@ -269,11 +269,17 @@ def test_gender_choice_does_not_map_female_to_male() -> None:
     assert parsed_gender == "female"
 
 
-def test_boolean_answers_support_tamil_and_hindi_yes_and_no() -> None:
+def test_boolean_answers_support_indian_languages_yes_and_no() -> None:
     assert parse_answer(QUESTION_MAP["diabetes"], "ஆம்") is True
     assert parse_answer(QUESTION_MAP["diabetes"], "இல்லை") is False
     assert parse_answer(QUESTION_MAP["diabetes"], "हाँ") is True
     assert parse_answer(QUESTION_MAP["diabetes"], "नहीं") is False
+    assert parse_answer(QUESTION_MAP["diabetes"], "అవును") is True
+    assert parse_answer(QUESTION_MAP["diabetes"], "కాదు") is False
+    assert parse_answer(QUESTION_MAP["diabetes"], "അതെ") is True
+    assert parse_answer(QUESTION_MAP["diabetes"], "ഇല്ല") is False
+    assert parse_answer(QUESTION_MAP["diabetes"], "ಹೌದು") is True
+    assert parse_answer(QUESTION_MAP["diabetes"], "ಇಲ್ಲ") is False
 
 
 def test_numeric_duration_questions_reject_non_numeric_text() -> None:

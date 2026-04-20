@@ -1,6 +1,6 @@
 import type { QuestionPayload } from './types'
 
-export type AppLanguage = 'en' | 'ta' | 'hi'
+export type AppLanguage = 'en' | 'ta' | 'hi' | 'te' | 'ml' | 'kn'
 
 export interface LocalizedOption {
   value: string
@@ -42,6 +42,45 @@ const DEVANAGARI_DIGITS: Record<string, string> = {
   '९': '9',
 }
 
+const TELUGU_DIGITS: Record<string, string> = {
+  '౦': '0',
+  '౧': '1',
+  '౨': '2',
+  '౩': '3',
+  '౪': '4',
+  '౫': '5',
+  '౬': '6',
+  '౭': '7',
+  '౮': '8',
+  '౯': '9',
+}
+
+const MALAYALAM_DIGITS: Record<string, string> = {
+  '൦': '0',
+  '൧': '1',
+  '൨': '2',
+  '൩': '3',
+  '൪': '4',
+  '൫': '5',
+  '൬': '6',
+  '൭': '7',
+  '൮': '8',
+  '൯': '9',
+}
+
+const KANNADA_DIGITS: Record<string, string> = {
+  '೦': '0',
+  '೧': '1',
+  '೨': '2',
+  '೩': '3',
+  '೪': '4',
+  '೫': '5',
+  '೬': '6',
+  '೭': '7',
+  '೮': '8',
+  '೯': '9',
+}
+
 const UI_TEXT = {
   en: {
     home: 'Home',
@@ -56,6 +95,9 @@ const UI_TEXT = {
     english: 'English',
     tamil: 'தமிழ்',
     hindi: 'हिंदी',
+    telugu: 'తెలుగు',
+    malayalam: 'മലയാളം',
+    kannada: 'ಕನ್ನಡ',
     patientInterview: 'Patient Interview',
     patientQuestionnaire: 'Patient questionnaire',
     voicePromptsOn: 'Voice prompts on',
@@ -101,6 +143,9 @@ const UI_TEXT = {
     english: 'English',
     tamil: 'தமிழ்',
     hindi: 'हिंदी',
+    telugu: 'తెలుగు',
+    malayalam: 'മലയാളം',
+    kannada: 'ಕನ್ನಡ',
     patientInterview: 'நோயாளர் நேர்காணல்',
     patientQuestionnaire: 'நோயாளர் கேள்வித்தாள்',
     voicePromptsOn: 'குரல் வழிகாட்டுதல் இயங்குகிறது',
@@ -146,6 +191,9 @@ const UI_TEXT = {
     english: 'English',
     tamil: 'தமிழ்',
     hindi: 'हिंदी',
+    telugu: 'తెలుగు',
+    malayalam: 'മലയാളം',
+    kannada: 'ಕನ್ನಡ',
     patientInterview: 'मरीज साक्षात्कार',
     patientQuestionnaire: 'मरीज प्रश्नावली',
     voicePromptsOn: 'वॉइस प्रॉम्प्ट चालू',
@@ -177,6 +225,150 @@ const UI_TEXT = {
     speechUnsupported: 'इस ब्राउज़र में स्पीच रिकग्निशन उपलब्ध नहीं है।',
     policyHelper:
       'आप यहाँ अस्पताल नीति से जुड़े प्रश्न भी पूछ सकते हैं, जैसे उपवास या घर वापस जाने की व्यवस्था। सहायक उपलब्ध नीति जानकारी का उपयोग करके उत्तर देगा और आकलन को जारी रखेगा।',
+  },
+  te: {
+    home: 'హోమ్',
+    assessment: 'అసెస్‌మెంట్',
+    report: 'రిపోర్ట్',
+    records: 'రికార్డులు',
+    syncSessions: 'సెషన్‌లను సమకాలీకరించండి',
+    newAssessment: 'కొత్త అసెస్‌మెంట్',
+    launchNewAssessment: 'కొత్త అసెస్‌మెంట్ ప్రారంభించండి',
+    openRecords: 'రికార్డులు తెరవండి',
+    language: 'భాష',
+    english: 'English',
+    tamil: 'தமிழ்',
+    hindi: 'हिंदी',
+    telugu: 'తెలుగు',
+    malayalam: 'മലയാളം',
+    kannada: 'ಕನ್ನಡ',
+    patientInterview: 'రోగి ఇంటర్వ్యూ',
+    patientQuestionnaire: 'రోగి ప్రశ్నావళి',
+    voicePromptsOn: 'వాయిస్ ప్రాంప్ట్‌లు ఆన్‌లో ఉన్నాయి',
+    voicePromptsOff: 'వాయిస్ ప్రాంప్ట్‌లు ఆఫ్‌లో ఉన్నాయి',
+    startAssessment: 'అసెస్‌మెంట్ ప్రారంభించండి',
+    startingAssessment: 'అసెస్‌మెంట్ ప్రారంభమవుతోంది...',
+    startingAssessmentHelper:
+      'మీ అసెస్‌మెంట్ ఇప్పుడు తెరుచుకుంటోంది. కొంతసేపటి తర్వాత మొదటి అభ్యర్థన అయితే కొన్ని సెకన్లు పట్టవచ్చు.',
+    resumeAssessment: 'అసెస్‌మెంట్‌ను కొనసాగించండి',
+    resumeHelper: 'మీరు ఆపిన చోటు నుంచే కొనసాగించండి.',
+    nextQuestion: 'తదుపరి ప్రశ్న',
+    resumeCameraExam: 'కెమెరా ఎయిర్‌వే పరీక్షను కొనసాగించండి.',
+    startNewAssessmentPrompt: 'రోగి ప్రశ్నావళిని ప్రారంభించడానికి కొత్త అసెస్‌మెంట్ ప్రారంభించండి.',
+    currentPrompt: 'ప్రస్తుత ప్రశ్న',
+    whyAsked: 'ఈ ప్రశ్న ఎందుకు అడుగుతున్నారు?',
+    hideWhy: 'వివరణ దాచండి',
+    repeatPrompt: 'మళ్లీ చెప్పండి',
+    rephrasePrompt: 'ఇంకా సులభంగా చెప్పండి',
+    slowDownPrompt: 'నెమ్మదిగా చెప్పండి',
+    capturedResponse: 'రికార్డ్ చేసిన సమాధానం',
+    submitCapturedResponse: 'రికార్డ్ చేసిన సమాధానాన్ని పంపండి',
+    submitResponse: 'సమాధానం పంపండి',
+    clear: 'తొలగించండి',
+    saving: 'సేవ్ అవుతోంది...',
+    yes: 'అవును',
+    no: 'కాదు',
+    skip: 'దాటవేయండి',
+    typeOrDictate: 'రోగి చెప్పిన సమాధానాన్ని ఇక్కడ టైప్ చేయండి లేదా వాయిస్‌తో చెప్పండి...',
+    speechUnsupported: 'ఈ బ్రౌజర్‌లో వాయిస్ గుర్తింపు అందుబాటులో లేదు.',
+    policyHelper:
+      'ఇక్కడ ఉపవాసం లేదా ఇంటికి తీసుకెళ్లే ఏర్పాట్ల వంటి ఆసుపత్రి సూచనల గురించి కూడా అడగవచ్చు. సహాయకుడు అందుబాటులో ఉన్న విధాన సమాచారంతో సమాధానం చెప్పి అసెస్‌మెంట్‌ను కొనసాగిస్తాడు.',
+  },
+  ml: {
+    home: 'ഹോം',
+    assessment: 'അസസ്‌മെന്റ്',
+    report: 'റിപ്പോർട്ട്',
+    records: 'റെക്കോർഡുകൾ',
+    syncSessions: 'സെഷനുകൾ സമന്വയിപ്പിക്കുക',
+    newAssessment: 'പുതിയ അസസ്‌മെന്റ്',
+    launchNewAssessment: 'പുതിയ അസസ്‌മെന്റ് ആരംഭിക്കുക',
+    openRecords: 'റെക്കോർഡുകൾ തുറക്കുക',
+    language: 'ഭാഷ',
+    english: 'English',
+    tamil: 'தமிழ்',
+    hindi: 'हिंदी',
+    telugu: 'తెలుగు',
+    malayalam: 'മലയാളം',
+    kannada: 'ಕನ್ನಡ',
+    patientInterview: 'രോഗി അഭിമുഖം',
+    patientQuestionnaire: 'രോഗി ചോദ്യാവലി',
+    voicePromptsOn: 'വോയ്‌സ് പ്രോംപ്റ്റുകൾ ഓണാണ്',
+    voicePromptsOff: 'വോയ്‌സ് പ്രോംപ്റ്റുകൾ ഓഫ് ആണ്',
+    startAssessment: 'അസസ്‌മെന്റ് ആരംഭിക്കുക',
+    startingAssessment: 'അസസ്‌മെന്റ് ആരംഭിക്കുന്നു...',
+    startingAssessmentHelper:
+      'നിങ്ങളുടെ അസസ്‌മെന്റ് ഇപ്പോൾ തുറക്കുകയാണ്. കുറച്ച് നേരത്തിന് ശേഷം ചെയ്യുന്ന ആദ്യ അഭ്യർത്ഥനയായാൽ ചില സെക്കൻഡ് എടുക്കാം.',
+    resumeAssessment: 'അസസ്‌മെന്റ് തുടരുക',
+    resumeHelper: 'നിങ്ങൾ നിർത്തിയിടത്ത് നിന്ന് തുടരുക.',
+    nextQuestion: 'അടുത്ത ചോദ്യം',
+    resumeCameraExam: 'ക്യാമറ എയർവേ പരിശോധന തുടരുക.',
+    startNewAssessmentPrompt: 'രോഗി ചോദ്യാവലി ആരംഭിക്കാൻ പുതിയ അസസ്‌മെന്റ് ആരംഭിക്കുക.',
+    currentPrompt: 'നിലവിലെ ചോദ്യം',
+    whyAsked: 'ഈ ചോദ്യം എന്തിന് ചോദിക്കുന്നു?',
+    hideWhy: 'വിവരണം മറയ്ക്കുക',
+    repeatPrompt: 'വീണ്ടും പറയൂ',
+    rephrasePrompt: 'കുറച്ച് ലളിതമായി പറയൂ',
+    slowDownPrompt: 'ഇനിയും മന്ദഗതിയിൽ പറയൂ',
+    capturedResponse: 'റെക്കോർഡ് ചെയ്ത മറുപടി',
+    submitCapturedResponse: 'റെക്കോർഡ് ചെയ്ത മറുപടി അയയ്ക്കുക',
+    submitResponse: 'മറുപടി അയയ്ക്കുക',
+    clear: 'മായ്ക്കുക',
+    saving: 'സേവ് ചെയ്യുന്നു...',
+    yes: 'അതെ',
+    no: 'ഇല്ല',
+    skip: 'ഒഴിവാക്കുക',
+    typeOrDictate: 'രോഗിയുടെ കൃത്യമായ മറുപടി ഇവിടെ ടൈപ്പ് ചെയ്യുക അല്ലെങ്കിൽ ശബ്ദമായി പറയുക...',
+    speechUnsupported: 'ഈ ബ്രൗസറിൽ ശബ്ദം തിരിച്ചറിയൽ പിന്തുണയ്ക്കുന്നില്ല.',
+    policyHelper:
+      'ഇവിടെ ഉപവാസം അല്ലെങ്കിൽ വീട്ടിലേക്ക് മടങ്ങാനുള്ള ക്രമീകരണം പോലുള്ള ആശുപത്രി നിർദേശങ്ങളെയും കുറിച്ച് ചോദിക്കാം. സഹായി ലഭ്യമായ നയം അടിസ്ഥാനമാക്കി മറുപടി നൽകി അസസ്‌മെന്റ് തുടരും.',
+  },
+  kn: {
+    home: 'ಮುಖಪುಟ',
+    assessment: 'ಮೌಲ್ಯಮಾಪನ',
+    report: 'ವರದಿ',
+    records: 'ದಾಖಲೆಗಳು',
+    syncSessions: 'ಸೆಷನ್‌ಗಳನ್ನು ಸಿಂಕ್ ಮಾಡಿ',
+    newAssessment: 'ಹೊಸ ಮೌಲ್ಯಮಾಪನ',
+    launchNewAssessment: 'ಹೊಸ ಮೌಲ್ಯಮಾಪನ ಆರಂಭಿಸಿ',
+    openRecords: 'ದಾಖಲೆಗಳನ್ನು ತೆರೆಯಿರಿ',
+    language: 'ಭಾಷೆ',
+    english: 'English',
+    tamil: 'தமிழ்',
+    hindi: 'हिंदी',
+    telugu: 'తెలుగు',
+    malayalam: 'മലയാളം',
+    kannada: 'ಕನ್ನಡ',
+    patientInterview: 'ರೋಗಿ ಸಂದರ್ಶನ',
+    patientQuestionnaire: 'ರೋಗಿ ಪ್ರಶ್ನಾವಳಿ',
+    voicePromptsOn: 'ವಾಯ್ಸ್ ಪ್ರಾಂಪ್ಟ್‌ಗಳು ಆನ್ ಇವೆ',
+    voicePromptsOff: 'ವಾಯ್ಸ್ ಪ್ರಾಂಪ್ಟ್‌ಗಳು ಆಫ್ ಇವೆ',
+    startAssessment: 'ಮೌಲ್ಯಮಾಪನ ಆರಂಭಿಸಿ',
+    startingAssessment: 'ಮೌಲ್ಯಮಾಪನ ಆರಂಭವಾಗುತ್ತಿದೆ...',
+    startingAssessmentHelper:
+      'ನಿಮ್ಮ ಮೌಲ್ಯಮಾಪನ ಈಗ ತೆರೆದುಕೊಳ್ಳುತ್ತಿದೆ. ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರದ ಮೊದಲ ವಿನಂತಿಯಾಗಿದ್ದರೆ ಕೆಲವು ಸೆಕೆಂಡುಗಳು ಹಿಡಿಯಬಹುದು.',
+    resumeAssessment: 'ಮೌಲ್ಯಮಾಪನ ಮುಂದುವರಿಸಿ',
+    resumeHelper: 'ನೀವು ನಿಲ್ಲಿಸಿದ ಸ್ಥಳದಿಂದ ಮುಂದುವರಿಸಿ.',
+    nextQuestion: 'ಮುಂದಿನ ಪ್ರಶ್ನೆ',
+    resumeCameraExam: 'ಕ್ಯಾಮೆರಾ ಏರ್‌ವೇ ಪರೀಕ್ಷೆಯನ್ನು ಮುಂದುವರಿಸಿ.',
+    startNewAssessmentPrompt: 'ರೋಗಿ ಪ್ರಶ್ನಾವಳಿಯನ್ನು ಆರಂಭಿಸಲು ಹೊಸ ಮೌಲ್ಯಮಾಪನ ಆರಂಭಿಸಿ.',
+    currentPrompt: 'ಪ್ರಸ್ತುತ ಪ್ರಶ್ನೆ',
+    whyAsked: 'ಈ ಪ್ರಶ್ನೆಯನ್ನು ಏಕೆ ಕೇಳಲಾಗುತ್ತಿದೆ?',
+    hideWhy: 'ವಿವರಣೆಯನ್ನು ಮರೆಮಾಡಿ',
+    repeatPrompt: 'ಮತ್ತೆ ಹೇಳಿ',
+    rephrasePrompt: 'ಇನ್ನೂ ಸರಳವಾಗಿ ಹೇಳಿ',
+    slowDownPrompt: 'ನಿಧಾನವಾಗಿ ಹೇಳಿ',
+    capturedResponse: 'ದಾಖಲಿಸಿದ ಉತ್ತರ',
+    submitCapturedResponse: 'ದಾಖಲಿಸಿದ ಉತ್ತರವನ್ನು ಸಲ್ಲಿಸಿ',
+    submitResponse: 'ಉತ್ತರವನ್ನು ಸಲ್ಲಿಸಿ',
+    clear: 'ಅಳಿಸಿ',
+    saving: 'ಉಳಿಸಲಾಗುತ್ತಿದೆ...',
+    yes: 'ಹೌದು',
+    no: 'ಇಲ್ಲ',
+    skip: 'ಬಿಡಿ',
+    typeOrDictate: 'ರೋಗಿ ಹೇಳಿದ ನಿಖರ ಉತ್ತರವನ್ನು ಇಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ ಅಥವಾ ಧ್ವನಿಯಲ್ಲಿ ಹೇಳಿ...',
+    speechUnsupported: 'ಈ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಧ್ವನಿ ಗುರುತಿಸುವಿಕೆ ಲಭ್ಯವಿಲ್ಲ.',
+    policyHelper:
+      'ಇಲ್ಲಿ ಉಪವಾಸ ಅಥವಾ ಮನೆಗೆ ಹಿಂತಿರುಗುವ ವ್ಯವಸ್ಥೆ ಮುಂತಾದ ಆಸ್ಪತ್ರೆಯ ಸೂಚನೆಗಳ ಬಗ್ಗೆ ಕೂಡ ಕೇಳಬಹುದು. ಸಹಾಯಕನು ಲಭ್ಯವಿರುವ ನೀತಿ ಮಾಹಿತಿಯ ಆಧಾರದ ಮೇಲೆ ಉತ್ತರಿಸಿ ಮೌಲ್ಯಮಾಪನವನ್ನು ಮುಂದುವರಿಸುತ್ತಾನೆ.',
   },
 } as const
 
@@ -259,9 +451,87 @@ const WHY_HELPERS: Record<AppLanguage, Record<string, string>> = {
     mmrc_grade:
       'इससे समझने में मदद मिलती है कि सांस फूलना रोज़मर्रा की ज़िंदगी को कितना प्रभावित करता है।',
   },
+  te: {
+    history_source:
+      'దీనివల్ల నేను ప్రశ్నలను సరిగా అడగగలను, అలాగే నేను మీ గురించి అడుగుతున్నానా లేక రోగి గురించి అడుగుతున్నానా అనేది తెలుస్తుంది.',
+    patient_age:
+      'వయస్సు మత్తు ప్రణాళికను ప్రభావితం చేస్తుంది మరియు శస్త్రచికిత్సకు ముందు భద్రతా ప్రమాదాలను అర్థం చేసుకోవడానికి సహాయపడుతుంది.',
+    body_metrics:
+      'బరువు మరియు ఎత్తు BMI లెక్కించడానికి, అలాగే మత్తు మోతాదు మరియు ఎయిర్‌వే ప్రమాదాన్ని అంచనా వేయడానికి ఉపయోగపడతాయి.',
+    preoperative_diagnosis:
+      'శస్త్రచికిత్స ఏ ఆరోగ్య సమస్య కోసం జరుగుతోందో అనస్థీషియా బృందానికి తెలియడానికి ఈ ప్రశ్న అడుగుతున్నాను.',
+    proposed_procedure:
+      'ఏ శస్త్రచికిత్స లేదా చికిత్స చేయబోతున్నారు అనేది ఇది తెలియజేస్తుంది; దాని ఆధారంగా సిద్ధత మారుతుంది.',
+    previous_surgery:
+      'మునుపటి శస్త్రచికిత్స లేదా మత్తు అనుభవం ఈరోజు కూడా ముఖ్యమైన విషయాలను తెలియజేయవచ్చు.',
+    drug_allergies:
+      'మందులకు అలర్జీ ఉంటే అనస్థీషియా బృందం సురక్షితం కాని మందులను తప్పించుకోవచ్చు.',
+    smoking_history:
+      'పొగ త్రాగడం శ్వాస, ఆక్సిజన్ స్థాయి మరియు మత్తు తర్వాత కోలుకోవడంపై ప్రభావం చూపవచ్చు.',
+    breathlessness:
+      'శ్వాస తీసుకోవడంలో ఇబ్బంది గుండె లేదా ఊపిరితిత్తుల ఒత్తిడిని సూచించవచ్చు; ఇది మత్తు ప్రమాదాన్ని మార్చవచ్చు.',
+    nyha_class:
+      'ఎంత శారీరక శ్రమతో లక్షణాలు వస్తున్నాయో అర్థం చేసుకోవడానికి ఇది సహాయపడుతుంది.',
+    snoring_history:
+      'గురక నిద్రలో శ్వాస ఆగిపోవడం వంటి సమస్యలకు సంకేతం కావచ్చు; ఇది మత్తు సమయంలో ముఖ్యం.',
+    mmrc_grade:
+      'శ్వాస తీసుకోవడంలో ఇబ్బంది మీ రోజువారీ జీవితాన్ని ఎంతవరకు ప్రభావితం చేస్తుందో అర్థం చేసుకోవడానికి ఇది సహాయపడుతుంది.',
+  },
+  ml: {
+    history_source:
+      'ഇതിലൂടെ ഞാൻ ചോദ്യങ്ങൾ ശരിയായി ചോദിക്കാനും, നിങ്ങളെക്കുറിച്ചാണോ രോഗിയെക്കുറിച്ചാണോ ചോദിക്കേണ്ടത് എന്ന് മനസ്സിലാക്കാനും കഴിയും.',
+    patient_age:
+      'പ്രായം അനസ്തീഷ്യാ പദ്ധതി മാറ്റാം, ശസ്ത്രക്രിയക്ക് മുമ്പുള്ള സുരക്ഷാ അപകടങ്ങൾ മനസ്സിലാക്കാനും ഇത് സഹായിക്കും.',
+    body_metrics:
+      'ഭാരംയും ഉയരവും BMI കണക്കാക്കാനും, മരുന്ന് അളവും എയർവേ അപകടസാധ്യതയും മനസ്സിലാക്കാനും സഹായിക്കും.',
+    preoperative_diagnosis:
+      'ശസ്ത്രക്രിയ ഏത് ആരോഗ്യപ്രശ്നത്തിനാണ് നടത്തുന്നത് എന്ന് അനസ്തീഷ്യാ ടീമിന് അറിയാൻ ഞാൻ ഇത് ചോദിക്കുന്നു.',
+    proposed_procedure:
+      'ഏത് ശസ്ത്രക്രിയ അല്ലെങ്കിൽ ചികിത്സയാണ് ആസൂത്രണം ചെയ്തിരിക്കുന്നത് എന്ന് ഇത് വ്യക്തമാക്കുന്നു; അതനുസരിച്ച് തയ്യാറെടുപ്പ് മാറും.',
+    previous_surgery:
+      'മുമ്പത്തെ ശസ്ത്രക്രിയയോ അനസ്തീഷ്യ അനുഭവമോ ഇന്ന് പോലും പ്രധാന വിവരങ്ങൾ നൽകാം.',
+    drug_allergies:
+      'മരുന്ന് അലർജി ഉണ്ടെങ്കിൽ സുരക്ഷിതമല്ലാത്ത മരുന്നുകൾ ഒഴിവാക്കാൻ അനസ്തീഷ്യാ ടീമിന് സഹായിക്കും.',
+    smoking_history:
+      'പുകവലി ശ്വാസം, ഓക്സിജൻ നില, അനസ്തീഷ്യക്ക് ശേഷമുള്ള വീണ്ടെടുപ്പ് എന്നിവയെ ബാധിക്കാം.',
+    breathlessness:
+      'ശ്വാസംമുട്ടൽ ഹൃദയത്തിലോ ശ്വാസകോശത്തിലോ സമ്മർദ്ദം കാണിക്കാം; അതോടെ അനസ്തീഷ്യാ അപകടസാധ്യത മാറാം.',
+    nyha_class:
+      'എത്ര പ്രവർത്തനത്തിൽ ലക്ഷണങ്ങൾ വരുന്നു എന്ന് മനസ്സിലാക്കാൻ ഇത് സഹായിക്കും.',
+    snoring_history:
+      'കുരുൾ സ്ലീപ് അപ്നിയയുടെ സൂചനയായിരിക്കാം; അത് അനസ്തീഷ്യ സമയത്ത് പ്രധാനമാണ്.',
+    mmrc_grade:
+      'ശ്വാസംമുട്ടൽ ദിവസേന ജീവിതത്തെ എത്രമാത്രം ബാധിക്കുന്നു എന്ന് മനസ്സിലാക്കാൻ ഇത് സഹായിക്കുന്നു.',
+  },
+  kn: {
+    history_source:
+      'ಇದರಿಂದ ನಾನು ಪ್ರಶ್ನೆಗಳನ್ನು ಸರಿಯಾಗಿ ಕೇಳಬಹುದು, ಹಾಗೆಯೇ ನಿಮ್ಮ ಬಗ್ಗೆ ಕೇಳಬೇಕೆ ಅಥವಾ ರೋಗಿಯ ಬಗ್ಗೆ ಕೇಳಬೇಕೆ ಎಂಬುದು ತಿಳಿಯುತ್ತದೆ.',
+    patient_age:
+      'ವಯಸ್ಸು ಅನಸ್ಥೇಶಿಯಾ ಯೋಜನೆಯನ್ನು ಬದಲಾಯಿಸಬಹುದು ಮತ್ತು ಶಸ್ತ್ರಚಿಕಿತ್ಸೆಗೆ ಮೊದಲು ಸುರಕ್ಷತಾ ಅಪಾಯಗಳನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ.',
+    body_metrics:
+      'ತೂಕ ಮತ್ತು ಎತ್ತರ BMI ಲೆಕ್ಕಿಸಲು, ಹಾಗೆಯೇ ಔಷಧದ ಪ್ರಮಾಣ ಮತ್ತು ಏರ್‌ವೇ ಅಪಾಯವನ್ನು ಅಂದಾಜಿಸಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ.',
+    preoperative_diagnosis:
+      'ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಯಾವ ಆರೋಗ್ಯ ಸಮಸ್ಯೆಗಾಗಿ ಮಾಡಲಾಗುತ್ತಿದೆ ಎಂಬುದು ಅನಸ್ಥೇಶಿಯಾ ತಂಡಕ್ಕೆ ತಿಳಿಯಲು ನಾನು ಇದನ್ನು ಕೇಳುತ್ತೇನೆ.',
+    proposed_procedure:
+      'ಯಾವ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಅಥವಾ ಚಿಕಿತ್ಸೆಯನ್ನು ಮಾಡಲು ಹೋಗಿದ್ದಾರೆ ಎಂಬುದು ಇದರಿಂದ ತಿಳಿಯುತ್ತದೆ; ಅದರಂತೆ ಸಿದ್ಧತೆ ಬದಲಾಗುತ್ತದೆ.',
+    previous_surgery:
+      'ಹಿಂದಿನ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಅಥವಾ ಅನಸ್ಥೇಶಿಯಾ ಅನುಭವವು ಇಂದಿಗೂ ಮುಖ್ಯ ಮಾಹಿತಿಯನ್ನು ನೀಡಬಹುದು.',
+    drug_allergies:
+      'ಔಷಧ ಅಲರ್ಜಿ ಇದ್ದರೆ ಸುರಕ್ಷಿತವಲ್ಲದ ಔಷಧಿಗಳನ್ನು ತಪ್ಪಿಸಲು ಅನಸ್ಥೇಶಿಯಾ ತಂಡಕ್ಕೆ ಸಹಾಯವಾಗುತ್ತದೆ.',
+    smoking_history:
+      'ಧೂಮಪಾನವು ಉಸಿರಾಟ, ಆಮ್ಲಜನಕ ಮಟ್ಟ ಮತ್ತು ಅನಸ್ಥೇಶಿಯಾದ ನಂತರದ ಚೇತರಿಕೆಯನ್ನು ಪರಿಣಾಮಗೊಳಿಸಬಹುದು.',
+    breathlessness:
+      'ಉಸಿರಾಟದ ತೊಂದರೆ ಹೃದಯ ಅಥವಾ ಶ್ವಾಸಕೋಶದ ಒತ್ತಡವನ್ನು ಸೂಚಿಸಬಹುದು; ಇದರಿಂದ ಅನಸ್ಥೇಶಿಯಾ ಅಪಾಯ ಬದಲಾಗಬಹುದು.',
+    nyha_class:
+      'ಎಷ್ಟು ಚಟುವಟಿಕೆಯಲ್ಲಿ ಲಕ್ಷಣಗಳು ಕಾಣಿಸುತ್ತವೆ ಎಂಬುದನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ಇದು ಸಹಾಯ ಮಾಡುತ್ತದೆ.',
+    snoring_history:
+      'ಗುರಗುಟ್ಟುವುದು ಸ್ಲೀಪ್ ಅಪ್ನಿಯಾದ ಸೂಚನೆಯಾಗಿರಬಹುದು; ಇದು ಅನಸ್ಥೇಶಿಯಾ ಸಮಯದಲ್ಲಿ ಮುಖ್ಯವಾಗಿರುತ್ತದೆ.',
+    mmrc_grade:
+      'ಉಸಿರಾಟದ ತೊಂದರೆ ದೈನಂದಿನ ಜೀವನವನ್ನು ಎಷ್ಟು ಪರಿಣಾಮಗೊಳಿಸುತ್ತದೆ ಎಂಬುದನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ಇದು ಸಹಾಯ ಮಾಡುತ್ತದೆ.',
+  },
 }
 
-const TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
+const BASE_TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
   ta: {
     'Hello! I am Valli. You may use text or voice for taking the assessment.':
       'வணக்கம்! நான் வள்ளி. இந்த மதிப்பீட்டிற்கு நீங்கள் உரை அல்லது குரலை பயன்படுத்தலாம்.',
@@ -604,6 +874,212 @@ const TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
   },
 }
 
+const EXTRA_TRANSLATIONS: Record<'te' | 'ml' | 'kn', Record<string, string>> = {
+  te: {
+    'Hello! I am Valli. You may use text or voice for taking the assessment.':
+      'నమస్తే! నేను వల్లి. ఈ అసెస్‌మెంట్ కోసం మీరు టెక్స్ట్ లేదా వాయిస్ ఉపయోగించవచ్చు.',
+    'Got it, thank you.': 'సరే, ధన్యవాదాలు.',
+    "I'll say that again.": 'నేను మళ్లీ చెబుతాను.',
+    'Let me say that more simply.': 'ఇంకా సులభంగా చెబుతాను.',
+    "Sure, I'll slow down.": 'సరే, నేను నెమ్మదిగా చెబుతాను.',
+    'Please answer yes or no.': 'దయచేసి అవును లేదా కాదు అని సమాధానం చెప్పండి.',
+    'Please choose the option that fits best.': 'మీకు సరిపోయే ఎంపికను ఎంచుకోండి.',
+    'Your options are:': 'మీ ఎంపికలు ఇవి:',
+    "I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":
+      'నేను మీ ప్రీ-అనస్థెటిక్ అసెస్‌మెంట్‌కు సహాయం చేయడానికి ఉన్నాను. కాబట్టి ఇప్పటికైతే ఇదిపైనే కొనసాగుదాం. ప్రస్తుత ప్రశ్నకు సమాధానం చెప్పండి, లేదా అవసరమైతే శస్త్రచికిత్స సూచనల గురించి అడగండి.',
+    "I've recorded your answer. I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":
+      'మీ సమాధానాన్ని నమోదు చేసాను. నేను మీ ప్రీ-అనస్థెటిక్ అసెస్‌మెంట్‌కు సహాయం చేయడానికి ఉన్నాను. కాబట్టి ఇప్పటికైతే ఇదిపైనే కొనసాగుదాం. ప్రస్తుత ప్రశ్నకు సమాధానం చెప్పండి, లేదా అవసరమైతే శస్త్రచికిత్స సూచనల గురించి అడగండి.',
+    'What is your name?': 'మీ పేరు ఏమిటి?',
+    'What is your age?': 'మీ వయస్సెంత?',
+    'For example, 42': 'ఉదాహరణకు: 42',
+    "What's your gender?": 'మీ లింగం ఏమిటి?',
+    'Male': 'పురుషుడు',
+    'Female': 'స్త్రీ',
+    'Other': 'ఇతర',
+    'What is your UHID number?': 'మీ UHID నంబర్ ఏమిటి?',
+    'What is your IP number?': 'మీ IP నంబర్ ఏమిటి?',
+    'You can skip this if you do not have it.': 'ఇది మీ వద్ద లేకపోతే దాటవేయవచ్చు.',
+    'Please tell me both your weight in kilograms and your height in centimeters.':
+      'దయచేసి మీ బరువును కిలోగ్రాముల్లో మరియు ఎత్తును సెంటీమీటర్లలో చెప్పండి.',
+    'For example: 68 kg and 162 cm.': 'ఉదాహరణకు: 68 కిలోలు మరియు 162 సెం.మీ.',
+    'What health problem are you being treated for?':
+      'మీకు ఏ ఆరోగ్య సమస్యకు చికిత్స జరుగుతోంది?',
+    'What surgery or treatment are you going to have?':
+      'మీకు ఏ శస్త్రచికిత్స లేదా చికిత్స చేయబోతున్నారు?',
+    'Who is taking the assessment?': 'ఈ అసెస్‌మెంట్‌ను ఎవరు చేస్తున్నారు?',
+    'Patient': 'రోగి',
+    'Relative/Guardian': 'బంధువు / సంరక్షకుడు',
+    'Medical Records': 'మెడికల్ రికార్డులు',
+    'Pre-Anesthetic Assessment': 'ప్రీ-అనస్థెటిక్ అసెస్‌మెంట్',
+    'AI assisted pre operative assessment.':
+      'ఏఐ సహాయంతో ముందస్తు శస్త్రచికిత్సా మూల్యాంకనం.',
+    'Conduct the patient interview, complete the camera-based airway examination, and generate the final assessment report from one streamlined workflow.':
+      'రోగి ఇంటర్వ్యూ పూర్తి చేసి, కెమెరా ఆధారిత ఎయిర్‌వే పరీక్ష పూర్తి చేసి, చివరి అసెస్‌మెంట్ నివేదికను ఒకే పనితీరులో తయారు చేయండి.',
+    'Interview': 'ఇంటర్వ్యూ',
+    'Guided patient intake': 'మార్గదర్శక రోగి నమోదు',
+    'Camera': 'కెమెరా',
+    'Airway examination': 'ఎయిర్‌వే పరీక్ష',
+    'Report': 'రిపోర్ట్',
+    'Records': 'రికార్డులు',
+    'Do you have any history of previous surgeries in the past?': 'మీకు ఇంతకు ముందు ఎప్పుడైనా శస్త్రచికిత్స జరిగిందా?',
+    'Do you have diabetes?': 'మీకు మధుమేహం ఉందా?',
+    'Do you have high BP (blood pressure)?': 'మీకు అధిక రక్తపోటు ఉందా?',
+    'Do you have asthma?': 'మీకు ఆస్థమా ఉందా?',
+    'Do you have a history of smoking?': 'మీకు పొగ త్రాగే అలవాటు ఉందా?',
+    'Do you have a history of alcohol consumption?': 'మీకు మద్యం సేవించే అలవాటు ఉందా?',
+    'Do you have any history of breathlessness?': 'మీకు శ్వాస తీసుకోవడంలో ఇబ్బంది చరిత్ర ఉందా?',
+    'Is there any medical or personal information you would like your anesthetist to be aware of?':
+      'మీ అనస్థెటిస్ట్‌కు తెలియాలి అనుకునే వైద్య లేదా వ్యక్తిగత సమాచారం ఏదైనా ఉందా?',
+    'The questionnaire is complete. Please continue to the camera airway assessment page using a frontal view and a side profile to finish the assessment.':
+      'ప్రశ్నావళి పూర్తయింది. అసెస్‌మెంట్‌ను పూర్తి చేయడానికి ముందు మరియు పక్క ప్రొఫైల్‌తో కెమెరా ఎయిర్‌వే పేజీకి వెళ్లండి.',
+    'Please capture the remaining required airway view to finish the examination.':
+      'పరీక్ష పూర్తి చేయడానికి మిగిలిన అవసరమైన కెమెరా దృశ్యాన్ని రికార్డ్ చేయండి.',
+    'The camera-based examination is complete. Your final transcript and report are now ready.':
+      'కెమెరా ఆధారిత పరీక్ష పూర్తయింది. మీ చివరి ట్రాన్స్‌క్రిప్ట్ మరియు రిపోర్ట్ సిద్ధంగా ఉన్నాయి.',
+    'Frontal view camera assessment was recorded. Detailed measurements are available in the final report.':
+      'ముందు కెమెరా అంచనా రికార్డ్ అయింది. విపులమైన కొలతలు చివరి రిపోర్ట్‌లో ఉంటాయి.',
+    'Side-profile view camera assessment was recorded. Detailed measurements are available in the final report.':
+      'సైడ్ ప్రొఫైల్ కెమెరా అంచనా రికార్డ్ అయింది. విపులమైన కొలతలు చివరి రిపోర్ట్‌లో ఉంటాయి.',
+  },
+  ml: {
+    'Hello! I am Valli. You may use text or voice for taking the assessment.':
+      'നമസ്കാരം! ഞാൻ വള്ളി. ഈ അസസ്‌മെന്റിനായി നിങ്ങൾക്ക് ടെക്സ്റ്റ് അല്ലെങ്കിൽ ശബ്ദം ഉപയോഗിക്കാം.',
+    'Got it, thank you.': 'ശരി, നന്ദി.',
+    "I'll say that again.": 'ഞാൻ അത് വീണ്ടും പറയും.',
+    'Let me say that more simply.': 'ഞാൻ അത് കൂടുതൽ ലളിതമായി പറയും.',
+    "Sure, I'll slow down.": 'ശരി, ഞാൻ മന്ദഗതിയിൽ പറയും.',
+    'Please answer yes or no.': 'ദയവായി അതെ അല്ലെങ്കിൽ ഇല്ല എന്ന് മറുപടി പറയൂ.',
+    'Please choose the option that fits best.': 'താങ്കൾക്ക് ഏറ്റവും അനുയോജ്യമായ ഓപ്ഷൻ തിരഞ്ഞെടുക്കൂ.',
+    'Your options are:': 'നിങ്ങളുടെ ഓപ്ഷനുകൾ:',
+    "I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":
+      'നിങ്ങളുടെ പ്രീ-അനസ്തീഷ്യ അസസ്‌മെന്റിന് സഹായിക്കാനാണ് ഞാൻ ഇവിടെ ഉള്ളത്, അതിനാൽ ഇപ്പോൾ ഇതിൽ തന്നെ തുടരാം. നിലവിലെ ചോദ്യത്തിന് മറുപടി നൽകുക, അല്ലെങ്കിൽ ആവശ്യമെങ്കിൽ ശസ്ത്രക്രിയ നിർദേശങ്ങളെക്കുറിച്ച് ചോദിക്കാം.',
+    "I've recorded your answer. I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":
+      'നിങ്ങളുടെ മറുപടി ഞാൻ രേഖപ്പെടുത്തി. നിങ്ങളുടെ പ്രീ-അനസ്തീഷ്യ അസസ്‌മെന്റിന് സഹായിക്കാനാണ് ഞാൻ ഇവിടെ ഉള്ളത്, അതിനാൽ ഇപ്പോൾ ഇതിൽ തന്നെ തുടരാം. നിലവിലെ ചോദ്യത്തിന് മറുപടി നൽകുക, അല്ലെങ്കിൽ ആവശ്യമെങ്കിൽ ശസ്ത്രക്രിയ നിർദേശങ്ങളെക്കുറിച്ച് ചോദിക്കാം.',
+    'What is your name?': 'നിങ്ങളുടെ പേര് എന്താണ്?',
+    'What is your age?': 'നിങ്ങളുടെ വയസ് എത്രയാണ്?',
+    'For example, 42': 'ഉദാഹരണത്തിന്: 42',
+    "What's your gender?": 'നിങ്ങളുടെ ലിംഗം എന്താണ്?',
+    'Male': 'പുരുഷൻ',
+    'Female': 'സ്ത്രീ',
+    'Other': 'മറ്റ്',
+    'What is your UHID number?': 'നിങ്ങളുടെ UHID നമ്പർ എന്താണ്?',
+    'What is your IP number?': 'നിങ്ങളുടെ IP നമ്പർ എന്താണ്?',
+    'You can skip this if you do not have it.': 'ഇത് ഇല്ലെങ്കിൽ ഒഴിവാക്കാം.',
+    'Please tell me both your weight in kilograms and your height in centimeters.':
+      'ദയവായി നിങ്ങളുടെ ഭാരം കിലോഗ്രാമിലും ഉയരം സെന്റിമീറ്ററിലും പറയൂ.',
+    'For example: 68 kg and 162 cm.': 'ഉദാഹരണത്തിന്: 68 കിലോയും 162 സെ.മീ.യും.',
+    'What health problem are you being treated for?':
+      'ഏത് ആരോഗ്യപ്രശ്നത്തിനാണ് നിങ്ങള്‍ക്ക് ചികിത്സ ലഭിക്കുന്നത്?',
+    'What surgery or treatment are you going to have?':
+      'നിങ്ങള്‍ക്ക് ഏത് ശസ്ത്രക്രിയയോ ചികിത്സയോ നടത്താനാണ് പോകുന്നത്?',
+    'Who is taking the assessment?': 'ഈ അസസ്‌മെന്റ് ആരാണ് നടത്തുന്നത്?',
+    'Patient': 'രോഗി',
+    'Relative/Guardian': 'ബന്ധു / രക്ഷിതാവ്',
+    'Medical Records': 'മെഡിക്കൽ രേഖകൾ',
+    'Pre-Anesthetic Assessment': 'പ്രീ-അനസ്തീഷ്യ അസസ്‌മെന്റ്',
+    'AI assisted pre operative assessment.':
+      'എഐ സഹായത്തോടെ നടത്തുന്ന പ്രീ-ഓപ്പറേറ്റീവ് വിലയിരുത്തൽ.',
+    'Conduct the patient interview, complete the camera-based airway examination, and generate the final assessment report from one streamlined workflow.':
+      'രോഗി അഭിമുഖം പൂർത്തിയാക്കി, ക്യാമറ അടിസ്ഥാനമാക്കിയ എയർവേ പരിശോധന നടത്തി, ഒറ്റ പ്രവർത്തനക്രമത്തിൽ അവസാന അസസ്‌മെന്റ് റിപ്പോർട്ട് തയ്യാറാക്കൂ.',
+    'Interview': 'അഭിമുഖം',
+    'Guided patient intake': 'മാർഗ്ഗനിർദേശ രോഗി രജിസ്ട്രേഷൻ',
+    'Camera': 'ക്യാമറ',
+    'Airway examination': 'എയർവേ പരിശോധന',
+    'Report': 'റിപ്പോർട്ട്',
+    'Records': 'റെക്കോർഡുകൾ',
+    'Do you have any history of previous surgeries in the past?': 'മുമ്പ് ഒരിക്കലും ശസ്ത്രക്രിയ ഉണ്ടായിട്ടുണ്ടോ?',
+    'Do you have diabetes?': 'നിങ്ങൾക്ക് പ്രമേഹം ഉണ്ടോ?',
+    'Do you have high BP (blood pressure)?': 'നിങ്ങൾക്ക് ഉയർന്ന രക്തസമ്മർദ്ദമുണ്ടോ?',
+    'Do you have asthma?': 'നിങ്ങൾക്ക് ആസ്ത്മയുണ്ടോ?',
+    'Do you have a history of smoking?': 'നിങ്ങൾക്ക് പുകവലി ശീലം ഉണ്ടോ?',
+    'Do you have a history of alcohol consumption?': 'നിങ്ങൾക്ക് മദ്യപാന ശീലം ഉണ്ടോ?',
+    'Do you have any history of breathlessness?': 'നിങ്ങൾക്ക് ശ്വാസംമുട്ടൽ ചരിത്രമുണ്ടോ?',
+    'Is there any medical or personal information you would like your anesthetist to be aware of?':
+      'നിങ്ങളുടെ അനസ്തറ്റിസ്റ്റിന് അറിയേണ്ട മെഡിക്കൽ അല്ലെങ്കിൽ വ്യക്തിപരമായ വിവരങ്ങളുണ്ടോ?',
+    'The questionnaire is complete. Please continue to the camera airway assessment page using a frontal view and a side profile to finish the assessment.':
+      'ചോദ്യാവലി പൂർത്തിയായി. വിലയിരുത്തൽ പൂർത്തിയാക്കാൻ ഫ്രണ്ടൽ, സൈഡ് പ്രൊഫൈൽ കാഴ്ചകളോടെ ക്യാമറ എയർവേ പേജിലേക്ക് തുടരൂ.',
+    'Please capture the remaining required airway view to finish the examination.':
+      'പരിശോധന പൂർത്തിയാക്കാൻ ശേഷിക്കുന്ന ആവശ്യമായ ക്യാമറ കാഴ്ച പകർത്തൂ.',
+    'The camera-based examination is complete. Your final transcript and report are now ready.':
+      'ക്യാമറ അടിസ്ഥാനത്തിലുള്ള പരിശോധന പൂർത്തിയായി. നിങ്ങളുടെ അന്തിമ ട്രാൻസ്‌ക്രിപ്റ്റും റിപ്പോർട്ടും തയ്യാറായി.',
+    'Frontal view camera assessment was recorded. Detailed measurements are available in the final report.':
+      'ഫ്രണ്ടൽ ക്യാമറ വിലയിരുത്തൽ രേഖപ്പെടുത്തി. വിശദമായ അളവുകൾ അവസാന റിപ്പോർട്ടിൽ ലഭ്യമാണ്.',
+    'Side-profile view camera assessment was recorded. Detailed measurements are available in the final report.':
+      'സൈഡ്-പ്രൊഫൈൽ ക്യാമറ വിലയിരുത്തൽ രേഖപ്പെടുത്തി. വിശദമായ അളവുകൾ അവസാന റിപ്പോർട്ടിൽ ലഭ്യമാണ്.',
+  },
+  kn: {
+    'Hello! I am Valli. You may use text or voice for taking the assessment.':
+      'ನಮಸ್ಕಾರ! ನಾನು ವಳ್ಳಿ. ಈ ಮೌಲ್ಯಮಾಪನಕ್ಕಾಗಿ ನೀವು ಪಠ್ಯ ಅಥವಾ ಧ್ವನಿಯನ್ನು ಬಳಸಬಹುದು.',
+    'Got it, thank you.': 'ಸರಿ, ಧನ್ಯವಾದಗಳು.',
+    "I'll say that again.": 'ನಾನು ಅದನ್ನು ಮತ್ತೆ ಹೇಳುತ್ತೇನೆ.',
+    'Let me say that more simply.': 'ನಾನು ಅದನ್ನು ಇನ್ನೂ ಸರಳವಾಗಿ ಹೇಳುತ್ತೇನೆ.',
+    "Sure, I'll slow down.": 'ಸರಿ, ನಾನು ನಿಧಾನವಾಗಿ ಹೇಳುತ್ತೇನೆ.',
+    'Please answer yes or no.': 'ದಯವಿಟ್ಟು ಹೌದು ಅಥವಾ ಇಲ್ಲ ಎಂದು ಉತ್ತರಿಸಿ.',
+    'Please choose the option that fits best.': 'ನಿಮಗೆ ಸರಿಯಾದ ಆಯ್ಕೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ.',
+    'Your options are:': 'ನಿಮ್ಮ ಆಯ್ಕೆಗಳು:',
+    "I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":
+      'ನಾನು ನಿಮ್ಮ ಪ್ರೀ-ಅನಸ್ಥೆಟಿಕ್ ಮೌಲ್ಯಮಾಪನಕ್ಕೆ ಸಹಾಯ ಮಾಡಲು ಇಲ್ಲಿದ್ದೇನೆ, ಆದ್ದರಿಂದ ಈಗ ಇದಲ್ಲೇ ಮುಂದುವರಿಯೋಣ. ಪ್ರಸ್ತುತ ಪ್ರಶ್ನೆಗೆ ಉತ್ತರಿಸಿ, ಅಥವಾ ಅಗತ್ಯವಿದ್ದರೆ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಸೂಚನೆಗಳ ಬಗ್ಗೆ ಕೇಳಿ.',
+    "I've recorded your answer. I'm here to help with your pre-anesthetic assessment, so let's stay with this for now. Please answer the current question, or ask me about surgery instructions if you need help.":
+      'ನಿಮ್ಮ ಉತ್ತರವನ್ನು ದಾಖಲಿಸಿದ್ದೇನೆ. ನಾನು ನಿಮ್ಮ ಪ್ರೀ-ಅನಸ್ಥೆಟಿಕ್ ಮೌಲ್ಯಮಾಪನಕ್ಕೆ ಸಹಾಯ ಮಾಡಲು ಇಲ್ಲಿದ್ದೇನೆ, ಆದ್ದರಿಂದ ಈಗ ಇದಲ್ಲೇ ಮುಂದುವರಿಯೋಣ. ಪ್ರಸ್ತುತ ಪ್ರಶ್ನೆಗೆ ಉತ್ತರಿಸಿ, ಅಥವಾ ಅಗತ್ಯವಿದ್ದರೆ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಸೂಚನೆಗಳ ಬಗ್ಗೆ ಕೇಳಿ.',
+    'What is your name?': 'ನಿಮ್ಮ ಹೆಸರು ಏನು?',
+    'What is your age?': 'ನಿಮ್ಮ ವಯಸ್ಸು ಎಷ್ಟು?',
+    'For example, 42': 'ಉದಾಹರಣೆಗೆ: 42',
+    "What's your gender?": 'ನಿಮ್ಮ ಲಿಂಗ ಏನು?',
+    'Male': 'ಪುರುಷ',
+    'Female': 'ಸ್ತ್ರೀ',
+    'Other': 'ಇತರೆ',
+    'What is your UHID number?': 'ನಿಮ್ಮ UHID ಸಂಖ್ಯೆ ಏನು?',
+    'What is your IP number?': 'ನಿಮ್ಮ IP ಸಂಖ್ಯೆ ಏನು?',
+    'You can skip this if you do not have it.': 'ಇದು ಇಲ್ಲದಿದ್ದರೆ ಬಿಡಬಹುದು.',
+    'Please tell me both your weight in kilograms and your height in centimeters.':
+      'ದಯವಿಟ್ಟು ನಿಮ್ಮ ತೂಕವನ್ನು ಕಿಲೋಗ್ರಾಂಗಳಲ್ಲಿ ಮತ್ತು ಎತ್ತರವನ್ನು ಸೆಂಟಿಮೀಟರ್‌ಗಳಲ್ಲಿ ತಿಳಿಸಿ.',
+    'For example: 68 kg and 162 cm.': 'ಉದಾಹರಣೆಗೆ: 68 ಕೆಜಿ ಮತ್ತು 162 ಸೆಂ.ಮೀ.',
+    'What health problem are you being treated for?':
+      'ನಿಮಗೆ ಯಾವ ಆರೋಗ್ಯ ಸಮಸ್ಯೆಗೆ ಚಿಕಿತ್ಸೆ ನೀಡಲಾಗುತ್ತಿದೆ?',
+    'What surgery or treatment are you going to have?':
+      'ನಿಮಗೆ ಯಾವ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಅಥವಾ ಚಿಕಿತ್ಸೆ ನಡೆಯಲಿದೆ?',
+    'Who is taking the assessment?': 'ಈ ಮೌಲ್ಯಮಾಪನವನ್ನು ಯಾರು ಮಾಡುತ್ತಿದ್ದಾರೆ?',
+    'Patient': 'ರೋಗಿ',
+    'Relative/Guardian': 'ಬಂಧು / ಪಾಲಕರವರು',
+    'Medical Records': 'ವೈದ್ಯಕೀಯ ದಾಖಲೆಗಳು',
+    'Pre-Anesthetic Assessment': 'ಪ್ರೀ-ಅನಸ್ಥೆಟಿಕ್ ಮೌಲ್ಯಮಾಪನ',
+    'AI assisted pre operative assessment.':
+      'ಎಐ ಸಹಾಯದಿಂದ ನಡೆಸುವ ಪ್ರೀ-ಆಪರೇಟಿವ್ ಮೌಲ್ಯಮಾಪನ.',
+    'Conduct the patient interview, complete the camera-based airway examination, and generate the final assessment report from one streamlined workflow.':
+      'ರೋಗಿ ಸಂದರ್ಶನವನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ, ಕ್ಯಾಮೆರಾ ಆಧಾರಿತ ಏರ್‌ವೇ ಪರೀಕ್ಷೆಯನ್ನು ಮುಗಿಸಿ, ಒಂದೇ ಕ್ರಮದಲ್ಲಿ ಅಂತಿಮ ಮೌಲ್ಯಮಾಪನ ವರದಿಯನ್ನು ಸಿದ್ಧಪಡಿಸಿ.',
+    'Interview': 'ಸಂದರ್ಶನ',
+    'Guided patient intake': 'ಮಾರ್ಗದರ್ಶಿತ ರೋಗಿ ನೋಂದಣಿ',
+    'Camera': 'ಕ್ಯಾಮೆರಾ',
+    'Airway examination': 'ಏರ್‌ವೇ ಪರೀಕ್ಷೆ',
+    'Report': 'ವರದಿ',
+    'Records': 'ದಾಖಲೆಗಳು',
+    'Do you have any history of previous surgeries in the past?': 'ಹಿಂದೆ ಯಾವುದಾದರೂ ಶಸ್ತ್ರಚಿಕಿತ್ಸೆ ಆಗಿದೆಯೇ?',
+    'Do you have diabetes?': 'ನಿಮಗೆ ಮಧುಮೇಹ ಇದೆಯೇ?',
+    'Do you have high BP (blood pressure)?': 'ನಿಮಗೆ ಹೆಚ್ಚಿನ ರಕ್ತದೊತ್ತಡ ಇದೆಯೇ?',
+    'Do you have asthma?': 'ನಿಮಗೆ ಆಸ್ಥಮಾ ಇದೆಯೇ?',
+    'Do you have a history of smoking?': 'ನಿಮಗೆ ಧೂಮಪಾನದ ಇತಿಹಾಸ ಇದೆಯೇ?',
+    'Do you have a history of alcohol consumption?': 'ನಿಮಗೆ ಮದ್ಯಪಾನದ ಇತಿಹಾಸ ಇದೆಯೇ?',
+    'Do you have any history of breathlessness?': 'ನಿಮಗೆ ಉಸಿರಾಟದ ತೊಂದರೆಯ ಇತಿಹಾಸ ಇದೆಯೇ?',
+    'Is there any medical or personal information you would like your anesthetist to be aware of?':
+      'ನಿಮ್ಮ ಅನಸ್ಥೆಟಿಸ್ಟ್‌ಗೆ ತಿಳಿದಿರಬೇಕೆಂದು ನೀವು ಬಯಸುವ ವೈದ್ಯಕೀಯ ಅಥವಾ ವೈಯಕ್ತಿಕ ಮಾಹಿತಿ ಇದೆಯೇ?',
+    'The questionnaire is complete. Please continue to the camera airway assessment page using a frontal view and a side profile to finish the assessment.':
+      'ಪ್ರಶ್ನಾವಳಿ ಪೂರ್ಣಗೊಂಡಿದೆ. ಮೌಲ್ಯಮಾಪನವನ್ನು ಮುಗಿಸಲು ಫ್ರಂಟಲ್ ಮತ್ತು ಸೈಡ್ ಪ್ರೊಫೈಲ್ ದೃಶ್ಯಗಳೊಂದಿಗೆ ಕ್ಯಾಮೆರಾ ಏರ್‌ವೇ ಪುಟಕ್ಕೆ ಮುಂದುವರಿಯಿರಿ.',
+    'Please capture the remaining required airway view to finish the examination.':
+      'ಪರೀಕ್ಷೆಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಲು ಉಳಿದಿರುವ ಅಗತ್ಯ ಕ್ಯಾಮೆರಾ ದೃಶ್ಯವನ್ನು ಸೆರೆಹಿಡಿಯಿರಿ.',
+    'The camera-based examination is complete. Your final transcript and report are now ready.':
+      'ಕ್ಯಾಮೆರಾ ಆಧಾರಿತ ಪರೀಕ್ಷೆ ಪೂರ್ಣಗೊಂಡಿದೆ. ನಿಮ್ಮ ಅಂತಿಮ ಟ್ರಾನ್ಸ್‌ಕ್ರಿಪ್ಟ್ ಮತ್ತು ವರದಿ ಈಗ ಸಿದ್ಧವಾಗಿದೆ.',
+    'Frontal view camera assessment was recorded. Detailed measurements are available in the final report.':
+      'ಮುಂಭಾಗದ ಕ್ಯಾಮೆರಾ ಮೌಲ್ಯಮಾಪನ ದಾಖಲಾಗಿದೆ. ವಿವರವಾದ ಮಾಪನಗಳು ಅಂತಿಮ ವರದಿಯಲ್ಲಿ ಲಭ್ಯವಿವೆ.',
+    'Side-profile view camera assessment was recorded. Detailed measurements are available in the final report.':
+      'ಸೈಡ್-ಪ್ರೊಫೈಲ್ ಕ್ಯಾಮೆರಾ ಮೌಲ್ಯಮಾಪನ ದಾಖಲಾಗಿದೆ. ವಿವರವಾದ ಮಾಪನಗಳು ಅಂತಿಮ ವರದಿಯಲ್ಲಿ ಲಭ್ಯವಿವೆ.',
+  },
+}
+
+const TRANSLATIONS: Record<Exclude<AppLanguage, 'en'>, Record<string, string>> = {
+  ...BASE_TRANSLATIONS,
+  ...EXTRA_TRANSLATIONS,
+}
+
 const LANGUAGE_SETS = {
   ta: {
     yes: new Set(['ஆம்', 'ஆமாம்', 'ஆமா', 'சரி']),
@@ -615,12 +1091,30 @@ const LANGUAGE_SETS = {
     no: new Set(['नहीं', 'नही', 'मत', 'न']),
     skip: new Set(['छोड़ें', 'छोड़ो', 'पता नहीं', 'मालूम नहीं']),
   },
+  te: {
+    yes: new Set(['అవును', 'అవున్', 'సరే']),
+    no: new Set(['కాదు', 'లేదు', 'వద్దు']),
+    skip: new Set(['దాటవేయండి', 'స్కిప్', 'తెలియదు']),
+  },
+  ml: {
+    yes: new Set(['അതെ', 'ഉണ്ട്', 'ശരി']),
+    no: new Set(['ഇല്ല', 'വേണ്ട', 'അല്ല']),
+    skip: new Set(['ഒഴിവാക്കുക', 'സ്കിപ്പ്', 'അറിയില്ല']),
+  },
+  kn: {
+    yes: new Set(['ಹೌದು', 'ಸರಿ', 'ಇದೆ']),
+    no: new Set(['ಇಲ್ಲ', 'ಬೇಡ', 'ಅಲ್ಲ']),
+    skip: new Set(['ಬಿಡಿ', 'ಸ್ಕಿಪ್', 'ಗೊತ್ತಿಲ್ಲ']),
+  },
 } as const
 
 function replaceLocalizedDigits(text: string) {
   return text
     .replace(/[௦-௯]/g, (digit) => TAMIL_DIGITS[digit] ?? digit)
     .replace(/[०-९]/g, (digit) => DEVANAGARI_DIGITS[digit] ?? digit)
+    .replace(/[౦-౯]/g, (digit) => TELUGU_DIGITS[digit] ?? digit)
+    .replace(/[൦-൯]/g, (digit) => MALAYALAM_DIGITS[digit] ?? digit)
+    .replace(/[೦-೯]/g, (digit) => KANNADA_DIGITS[digit] ?? digit)
 }
 
 function normalizedToken(text: string) {
@@ -642,6 +1136,42 @@ function dynamicTranslation(text: string, language: Exclude<AppLanguage, 'en'>):
       return `நன்றி. இன்னும் ${translatedTrailing} வேண்டும்.`
     }
 
+    if (language === 'te') {
+      const translatedTrailing = trailing
+        .replace('both your weight in kilograms and your height in centimeters', 'మీ బరువు మరియు ఎత్తు')
+        .replace('your weight in kilograms', 'మీ బరువు')
+        .replace('your height in centimeters', 'మీ ఎత్తు')
+        .replace('the number of years of this habit', 'ఈ అలవాటు ఎన్ని సంవత్సరాలుగా ఉంది')
+        .replace('packs per day', 'రోజుకు ఎన్ని ప్యాక్‌లు')
+        .replace('the last puff', 'చివరిసారి పొగ తాగిన సమయం')
+        .replace('the last drink', 'చివరిసారి మద్యం తీసుకున్న సమయం')
+      return `ధన్యవాదాలు. నాకు ఇంకా ${translatedTrailing} కావాలి.`
+    }
+
+    if (language === 'ml') {
+      const translatedTrailing = trailing
+        .replace('both your weight in kilograms and your height in centimeters', 'നിങ്ങളുടെ ഭാരംയും ഉയരവും')
+        .replace('your weight in kilograms', 'നിങ്ങളുടെ ഭാരം')
+        .replace('your height in centimeters', 'നിങ്ങളുടെ ഉയരം')
+        .replace('the number of years of this habit', 'ഈ ശീലം എത്ര വർഷമായി ഉണ്ട്')
+        .replace('packs per day', 'ദിവസത്തിൽ എത്ര പാക്ക്')
+        .replace('the last puff', 'അവസാനം പുകവലിച്ച സമയം')
+        .replace('the last drink', 'അവസാനം മദ്യം കുടിച്ച സമയം')
+      return `നന്ദി. എനിക്ക് ഇപ്പോഴും ${translatedTrailing} അറിയണം.`
+    }
+
+    if (language === 'kn') {
+      const translatedTrailing = trailing
+        .replace('both your weight in kilograms and your height in centimeters', 'ನಿಮ್ಮ ತೂಕ ಮತ್ತು ಎತ್ತರ')
+        .replace('your weight in kilograms', 'ನಿಮ್ಮ ತೂಕ')
+        .replace('your height in centimeters', 'ನಿಮ್ಮ ಎತ್ತರ')
+        .replace('the number of years of this habit', 'ಈ ಅಭ್ಯಾಸ ಎಷ್ಟು ವರ್ಷಗಳಿಂದ ಇದೆ')
+        .replace('packs per day', 'ದಿನಕ್ಕೆ ಎಷ್ಟು ಪ್ಯಾಕ್')
+        .replace('the last puff', 'ಕೊನೆಯದಾಗಿ ಧೂಮಪಾನ ಮಾಡಿದ ಸಮಯ')
+        .replace('the last drink', 'ಕೊನೆಯದಾಗಿ ಮದ್ಯ ಸೇವಿಸಿದ ಸಮಯ')
+      return `ಧನ್ಯವಾದಗಳು. ನನಗೆ ಇನ್ನೂ ${translatedTrailing} ಬೇಕಾಗಿದೆ.`
+    }
+
     const translatedTrailing = trailing
       .replace('both your weight in kilograms and your height in centimeters', 'आपका वजन और लंबाई')
       .replace('your weight in kilograms', 'आपका वजन')
@@ -656,12 +1186,24 @@ function dynamicTranslation(text: string, language: Exclude<AppLanguage, 'en'>):
   if (text.startsWith('Frontal view camera result: ')) {
     return language === 'ta'
       ? `முன்புற கேமரா முடிவு: ${text.slice('Frontal view camera result: '.length)}`
+      : language === 'te'
+        ? `ముందు కెమెరా ఫలితం: ${text.slice('Frontal view camera result: '.length)}`
+        : language === 'ml'
+          ? `മുൻ ക്യാമറ ഫലം: ${text.slice('Frontal view camera result: '.length)}`
+          : language === 'kn'
+            ? `ಮುಂಭಾಗದ ಕ್ಯಾಮೆರಾ ಫಲಿತಾಂಶ: ${text.slice('Frontal view camera result: '.length)}`
       : `फ्रंटल कैमरा परिणाम: ${text.slice('Frontal view camera result: '.length)}`
   }
 
   if (text.startsWith('Side-profile view camera result: ')) {
     return language === 'ta'
       ? `பக்கவாட்டு கேமரா முடிவு: ${text.slice('Side-profile view camera result: '.length)}`
+      : language === 'te'
+        ? `సైడ్ ప్రొఫైల్ కెమెరా ఫలితం: ${text.slice('Side-profile view camera result: '.length)}`
+        : language === 'ml'
+          ? `സൈഡ്-പ്രൊഫൈൽ ക്യാമറ ഫലം: ${text.slice('Side-profile view camera result: '.length)}`
+          : language === 'kn'
+            ? `ಸೈಡ್-ಪ್ರೊಫೈಲ್ ಕ್ಯಾಮೆರಾ ಫಲಿತಾಂಶ: ${text.slice('Side-profile view camera result: '.length)}`
       : `साइड प्रोफाइल कैमरा परिणाम: ${text.slice('Side-profile view camera result: '.length)}`
   }
 
@@ -678,6 +1220,15 @@ export function speechLocale(language: AppLanguage) {
   }
   if (language === 'hi') {
     return 'hi-IN'
+  }
+  if (language === 'te') {
+    return 'te-IN'
+  }
+  if (language === 'ml') {
+    return 'ml-IN'
+  }
+  if (language === 'kn') {
+    return 'kn-IN'
   }
   return 'en-IN'
 }
@@ -707,6 +1258,12 @@ export function translateText(text: string, language: AppLanguage): string {
   if (text.startsWith('Hospital policy guidance: ')) {
     return language === 'ta'
       ? `மருத்துவமனை கொள்கை வழிகாட்டுதல்: ${text.slice('Hospital policy guidance: '.length)}`
+      : language === 'te'
+        ? `ఆసుపత్రి సూచనలు: ${text.slice('Hospital policy guidance: '.length)}`
+        : language === 'ml'
+          ? `ആശുപത്രി മാർഗ്ഗനിർദേശം: ${text.slice('Hospital policy guidance: '.length)}`
+          : language === 'kn'
+            ? `ಆಸ್ಪತ್ರೆ ಮಾರ್ಗದರ್ಶನ: ${text.slice('Hospital policy guidance: '.length)}`
       : `अस्पताल नीति मार्गदर्शन: ${text.slice('Hospital policy guidance: '.length)}`
   }
 
