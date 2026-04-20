@@ -887,7 +887,7 @@ export default function App() {
               <span className="eyebrow">Valli</span>
               <span className="hero-chip">{t("Pre-Anesthetic Assessment")}</span>
             </div>
-            <h1>{t("Pre-anesthetic assessment for patient intake and airway screening.")}</h1>
+            <h1>{t("AI assisted pre operative assessment.")}</h1>
             <p>{t("Conduct the patient interview, complete the camera-based airway examination, and generate the final assessment report from one streamlined workflow.")}</p>
             <div className="hero-actions">
               {resumablePrompt ? (

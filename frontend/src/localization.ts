@@ -297,8 +297,8 @@ const TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
     'Relative/Guardian': 'உறவினர் / பாதுகாவலர்',
     'Medical Records': 'மருத்துவ பதிவுகள்',
     'Pre-Anesthetic Assessment': 'முன்-மயக்க மதிப்பீடு',
-    'Pre-anesthetic assessment for patient intake and airway screening.':
-      'நோயாளர் தகவல் சேகரிப்பும் காற்றுப்பாதை மதிப்பீடும் செய்யும் முன்-மயக்க பரிசோதனை.',
+    'AI assisted pre operative assessment.':
+      'செயற்கை நுண்ணறிவு உதவியுடன் முன் அறுவை சிகிச்சை மதிப்பீடு.',
     'Conduct the patient interview, complete the camera-based airway examination, and generate the final assessment report from one streamlined workflow.':
       'நோயாளர் நேர்காணலை முடித்து, கேமரா அடிப்படையிலான காற்றுப்பாதை பரிசோதனையை செய்து, ஒரே நடைமுறையில் இறுதி அறிக்கையை உருவாக்குங்கள்.',
     'Interview': 'நேர்காணல்',
@@ -465,8 +465,8 @@ const TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
     'Relative/Guardian': 'रिश्तेदार / अभिभावक',
     'Medical Records': 'मेडिकल रिकॉर्ड्स',
     'Pre-Anesthetic Assessment': 'प्री-एनेस्थेटिक आकलन',
-    'Pre-anesthetic assessment for patient intake and airway screening.':
-      'मरीज की जानकारी और एयरवे स्क्रीनिंग के लिए प्री-एनेस्थेटिक आकलन।',
+    'AI assisted pre operative assessment.':
+      'एआई सहायता से किया जाने वाला प्री-ऑपरेटिव आकलन।',
     'Conduct the patient interview, complete the camera-based airway examination, and generate the final assessment report from one streamlined workflow.':
       'मरीज का इंटरव्यू पूरा करें, कैमरा आधारित एयरवे जांच करें, और एक ही प्रक्रिया में अंतिम रिपोर्ट तैयार करें।',
     'Interview': 'इंटरव्यू',
