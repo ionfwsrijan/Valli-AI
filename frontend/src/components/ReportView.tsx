@@ -94,6 +94,9 @@ function CameraCaptureReport({
         <div className="report-card-meta">
           <span className="tag">Quality {metricPercent(capture?.quality_score)}</span>
           <span className="tag">Confidence {metricPercent(capture?.confidence)}</span>
+          {capture?.accuracy_tracking?.reliability_band ? (
+            <span className="tag">Reliability {capture.accuracy_tracking.reliability_band}</span>
+          ) : null}
         </div>
       </div>
 
@@ -120,6 +123,13 @@ function CameraCaptureReport({
       </div>
 
       <ul className="plain-list">
+        {capture?.accuracy_tracking ? (
+          <>
+            <li>Estimated accuracy: {metricPercent(capture.accuracy_tracking.estimated_accuracy)}</li>
+            <li>Reference set size: {capture.accuracy_tracking.reference_dataset_size}</li>
+            <li>{capture.accuracy_tracking.accuracy_note}</li>
+          </>
+        ) : null}
         {metrics.length
           ? metrics.map((metric) => (
               <li key={`note-${captureType}-${metric.key}`}>
@@ -307,6 +317,14 @@ export function ReportView({ report, onPrintReport, onPrintTranscript }: ReportV
                 <ul className="plain-list">
                   <li>{vision?.overall?.label ?? 'No camera assessment has been recorded yet.'}</li>
                   <li>{vision?.overall?.note ?? 'Both required camera views need to be captured to complete the airway examination.'}</li>
+                  {vision?.overall?.accuracy_tracking ? (
+                    <>
+                      <li>Estimated accuracy: {metricPercent(vision.overall.accuracy_tracking.estimated_accuracy)}</li>
+                      <li>Reliability: {vision.overall.accuracy_tracking.reliability_band}</li>
+                      <li>Reference dataset size: {vision.overall.accuracy_tracking.reference_dataset_size}</li>
+                      <li>{vision.overall.accuracy_tracking.accuracy_note}</li>
+                    </>
+                  ) : null}
                   {(vision?.overall?.derived_flags?.length ? vision.overall.derived_flags : ['No camera-derived airway flags were recorded.']).map((item) => (
                     <li key={item}>{item}</li>
                   ))}

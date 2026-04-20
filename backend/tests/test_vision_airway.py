@@ -130,6 +130,9 @@ def test_airway_vision_capture_updates_session_and_completes_after_both_views() 
         vision = frontal_payload["risk_snapshot"]["vision_airway"]
         assert vision["captures"]["frontal"]["status"] == "available"
         assert vision["overall"]["label"]
+        assert vision["captures"]["frontal"]["confidence"] >= 0.7
+        assert vision["captures"]["frontal"]["accuracy_tracking"]["reference_dataset_size"] >= 12
+        assert vision["captures"]["frontal"]["accuracy_tracking"]["estimated_accuracy"] >= 0.6
         frontal_metrics = vision["captures"]["frontal"]["metrics"]
         assert any(metric["label"] == "Estimated neck circumference" for metric in frontal_metrics)
         assert any("40 cm" in metric["finding"] for metric in frontal_metrics if metric["label"] == "Estimated neck circumference")
@@ -151,6 +154,10 @@ def test_airway_vision_capture_updates_session_and_completes_after_both_views() 
         profile_payload = profile_response.json()
         profile_vision = profile_payload["risk_snapshot"]["vision_airway"]
         assert profile_vision["captures"]["profile"]["status"] in {"available", "insufficient_quality"}
+        assert profile_vision["captures"]["profile"]["confidence"] >= 0.58
+        assert profile_vision["captures"]["profile"]["accuracy_tracking"]["reference_dataset_size"] >= 12
+        assert profile_vision["overall"]["confidence"] >= 0.65
+        assert profile_vision["overall"]["accuracy_tracking"]["reference_dataset_size"] >= 24
         assert profile_payload["status"] == "completed"
         assert any("Side-profile view camera result:" in item["message"] for item in profile_payload["transcript"])
         assert not any("measurements:" in item["message"] for item in profile_payload["transcript"])

@@ -120,6 +120,23 @@ export interface VisionAirwayMetric {
   interpretation: string
 }
 
+export interface VisionAirwayAccuracyTracking {
+  reference_dataset_size: number
+  reference_dataset_version: string
+  estimated_accuracy: number
+  reliability_band: string
+  measured_accuracy_available: boolean
+  accuracy_note: string
+  analyzed_views?: number
+  reference_match_score?: number
+  feature_stability_score?: number
+  top_reference_matches?: Array<{
+    profile: string
+    similarity: number
+    distance?: number
+  }>
+}
+
 export interface VisionAirwayCapture {
   capture_type: 'frontal' | 'profile'
   status: string
@@ -131,6 +148,7 @@ export interface VisionAirwayCapture {
   metrics?: VisionAirwayMetric[]
   supporting_cues: VisionAirwayCue[]
   summary: string
+  accuracy_tracking?: VisionAirwayAccuracyTracking
 }
 
 export interface VisionAirwayAssessment {
@@ -139,6 +157,12 @@ export interface VisionAirwayAssessment {
   analyzed_at: string
   images_persisted: boolean
   disclaimer: string
+  dataset_summary?: {
+    reference_dataset_version: string
+    reference_dataset_size: number
+    frontal_reference_profiles: number
+    profile_reference_profiles: number
+  }
   captures: Partial<Record<'frontal' | 'profile', VisionAirwayCapture>>
   overall: {
     status: string
@@ -149,5 +173,6 @@ export interface VisionAirwayAssessment {
     derived_flags: string[]
     supporting_cues: VisionAirwayCue[]
     note: string
+    accuracy_tracking?: VisionAirwayAccuracyTracking
   }
 }

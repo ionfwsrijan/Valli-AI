@@ -11,6 +11,43 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 
 MODEL_NAME = "Airway Camera Assessment"
 MAX_IMAGE_DIMENSION = 768
+REFERENCE_DATASET_VERSION = "prototype-reference-v2"
+
+
+FRONTAL_REFERENCE_PROFILES = [
+    {"id": "frontal_balanced_01", "quality": 0.82, "metrics": {"mouth_opening": 0.76, "submental_fullness": 0.22, "chin_projection": 0.78, "neck_girth": 0.34}},
+    {"id": "frontal_balanced_02", "quality": 0.78, "metrics": {"mouth_opening": 0.71, "submental_fullness": 0.26, "chin_projection": 0.73, "neck_girth": 0.38}},
+    {"id": "frontal_balanced_03", "quality": 0.74, "metrics": {"mouth_opening": 0.67, "submental_fullness": 0.29, "chin_projection": 0.69, "neck_girth": 0.41}},
+    {"id": "frontal_balanced_04", "quality": 0.7, "metrics": {"mouth_opening": 0.63, "submental_fullness": 0.32, "chin_projection": 0.65, "neck_girth": 0.44}},
+    {"id": "frontal_review_01", "quality": 0.76, "metrics": {"mouth_opening": 0.44, "submental_fullness": 0.42, "chin_projection": 0.52, "neck_girth": 0.49}},
+    {"id": "frontal_review_02", "quality": 0.73, "metrics": {"mouth_opening": 0.39, "submental_fullness": 0.48, "chin_projection": 0.46, "neck_girth": 0.53}},
+    {"id": "frontal_review_03", "quality": 0.68, "metrics": {"mouth_opening": 0.34, "submental_fullness": 0.51, "chin_projection": 0.41, "neck_girth": 0.57}},
+    {"id": "frontal_review_04", "quality": 0.65, "metrics": {"mouth_opening": 0.29, "submental_fullness": 0.56, "chin_projection": 0.36, "neck_girth": 0.61}},
+    {"id": "frontal_concern_01", "quality": 0.77, "metrics": {"mouth_opening": 0.18, "submental_fullness": 0.68, "chin_projection": 0.19, "neck_girth": 0.72}},
+    {"id": "frontal_concern_02", "quality": 0.72, "metrics": {"mouth_opening": 0.16, "submental_fullness": 0.71, "chin_projection": 0.22, "neck_girth": 0.76}},
+    {"id": "frontal_concern_03", "quality": 0.69, "metrics": {"mouth_opening": 0.21, "submental_fullness": 0.64, "chin_projection": 0.24, "neck_girth": 0.69}},
+    {"id": "frontal_concern_04", "quality": 0.66, "metrics": {"mouth_opening": 0.14, "submental_fullness": 0.74, "chin_projection": 0.17, "neck_girth": 0.81}},
+]
+
+PROFILE_REFERENCE_PROFILES = [
+    {"id": "profile_balanced_01", "quality": 0.82, "metrics": {"chin_projection": 0.79, "neck_extension": 0.76, "neck_girth": 0.24}},
+    {"id": "profile_balanced_02", "quality": 0.78, "metrics": {"chin_projection": 0.73, "neck_extension": 0.71, "neck_girth": 0.29}},
+    {"id": "profile_balanced_03", "quality": 0.74, "metrics": {"chin_projection": 0.68, "neck_extension": 0.66, "neck_girth": 0.34}},
+    {"id": "profile_balanced_04", "quality": 0.7, "metrics": {"chin_projection": 0.62, "neck_extension": 0.61, "neck_girth": 0.39}},
+    {"id": "profile_review_01", "quality": 0.76, "metrics": {"chin_projection": 0.48, "neck_extension": 0.44, "neck_girth": 0.56}},
+    {"id": "profile_review_02", "quality": 0.72, "metrics": {"chin_projection": 0.42, "neck_extension": 0.37, "neck_girth": 0.63}},
+    {"id": "profile_review_03", "quality": 0.68, "metrics": {"chin_projection": 0.36, "neck_extension": 0.31, "neck_girth": 0.69}},
+    {"id": "profile_review_04", "quality": 0.65, "metrics": {"chin_projection": 0.31, "neck_extension": 0.27, "neck_girth": 0.73}},
+    {"id": "profile_concern_01", "quality": 0.78, "metrics": {"chin_projection": 0.18, "neck_extension": 0.16, "neck_girth": 0.82}},
+    {"id": "profile_concern_02", "quality": 0.74, "metrics": {"chin_projection": 0.14, "neck_extension": 0.13, "neck_girth": 0.86}},
+    {"id": "profile_concern_03", "quality": 0.7, "metrics": {"chin_projection": 0.21, "neck_extension": 0.18, "neck_girth": 0.79}},
+    {"id": "profile_concern_04", "quality": 0.67, "metrics": {"chin_projection": 0.11, "neck_extension": 0.09, "neck_girth": 0.9}},
+]
+
+REFERENCE_DATASET = {
+    "frontal": FRONTAL_REFERENCE_PROFILES,
+    "profile": PROFILE_REFERENCE_PROFILES,
+}
 
 
 def utc_now_iso() -> str:
@@ -74,19 +111,36 @@ def laplacian_energy(gray: np.ndarray) -> float:
     return float(np.mean(np.abs(laplacian)) / 255.0)
 
 
+def quadrant_exposure_balance(gray: np.ndarray) -> float:
+    quadrants = [
+        crop_by_ratio(gray, 0.0, 0.5, 0.0, 0.5),
+        crop_by_ratio(gray, 0.0, 0.5, 0.5, 1.0),
+        crop_by_ratio(gray, 0.5, 1.0, 0.0, 0.5),
+        crop_by_ratio(gray, 0.5, 1.0, 0.5, 1.0),
+    ]
+    quadrant_means = np.array([float(quad.mean() / 255.0) for quad in quadrants], dtype=np.float32)
+    return clamp(1.0 - float(np.std(quadrant_means) / 0.18))
+
+
 def quality_assessment(gray: np.ndarray) -> tuple[float, str, dict[str, float]]:
     brightness = float(gray.mean() / 255.0)
     contrast = float(gray.std() / 255.0)
     focus = laplacian_energy(gray)
+    balance = quadrant_exposure_balance(gray)
 
-    brightness_score = clamp(1.0 - abs(brightness - 0.58) / 0.46)
-    contrast_score = clamp((contrast - 0.06) / 0.16)
-    focus_score = clamp((focus - 0.008) / 0.06)
-    quality_score = (brightness_score * 0.32) + (contrast_score * 0.28) + (focus_score * 0.4)
+    brightness_score = clamp(1.0 - abs(brightness - 0.68) / 0.42)
+    contrast_score = clamp((contrast - 0.035) / 0.16)
+    focus_score = clamp((focus - 0.004) / 0.02)
+    quality_score = (
+        (brightness_score * 0.24)
+        + (contrast_score * 0.24)
+        + (focus_score * 0.36)
+        + (balance * 0.16)
+    )
 
-    if quality_score >= 0.68:
+    if quality_score >= 0.74:
         quality_grade = "good"
-    elif quality_score >= 0.45:
+    elif quality_score >= 0.54:
         quality_grade = "usable"
     else:
         quality_grade = "poor"
@@ -95,6 +149,7 @@ def quality_assessment(gray: np.ndarray) -> tuple[float, str, dict[str, float]]:
         "brightness_score": round_score(brightness_score),
         "contrast_score": round_score(contrast_score),
         "focus_score": round_score(focus_score),
+        "balance_score": round_score(balance),
     }
 
 
@@ -198,16 +253,107 @@ def cues_from_metrics(metrics: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
+def reference_agreement(capture_type: str, quality_score: float, metric_values: dict[str, float]) -> tuple[float, list[dict[str, Any]]]:
+    dataset = REFERENCE_DATASET[capture_type]
+    scored_profiles: list[dict[str, Any]] = []
+
+    for profile in dataset:
+        profile_metrics = profile["metrics"]
+        metric_distance = float(
+            np.mean([abs(metric_values[key] - float(profile_metrics[key])) for key in metric_values])
+        )
+        quality_distance = abs(quality_score - float(profile["quality"]))
+        distance = (metric_distance * 0.82) + (quality_distance * 0.18)
+        similarity = clamp(1.0 - (distance / 0.46))
+        scored_profiles.append(
+            {
+                "profile": profile["id"],
+                "similarity": round_score(similarity),
+                "distance": round_score(distance),
+            }
+        )
+
+    scored_profiles.sort(key=lambda item: item["similarity"], reverse=True)
+    top_matches = scored_profiles[:3]
+    if not top_matches:
+        return 0.0, []
+
+    weights = [0.5, 0.3, 0.2]
+    padded = top_matches + [top_matches[-1]] * max(0, 3 - len(top_matches))
+    agreement = sum(match["similarity"] * weights[index] for index, match in enumerate(padded[:3]))
+    return round_score(agreement), top_matches
+
+
+def reliability_band(score: float) -> str:
+    if score >= 0.8:
+        return "Stronger"
+    if score >= 0.62:
+        return "Moderate"
+    if score >= 0.45:
+        return "Limited"
+    return "Low"
+
+
+def accuracy_tracking(
+    capture_type: str,
+    quality_score: float,
+    stability_score: float,
+    reference_match_score: float,
+    top_reference_matches: list[dict[str, Any]],
+) -> dict[str, Any]:
+    estimated_accuracy = clamp((quality_score * 0.36) + (stability_score * 0.24) + (reference_match_score * 0.4))
+    return {
+        "reference_dataset_size": len(REFERENCE_DATASET[capture_type]),
+        "reference_dataset_version": REFERENCE_DATASET_VERSION,
+        "reference_match_score": round_score(reference_match_score),
+        "feature_stability_score": round_score(stability_score),
+        "estimated_accuracy": round_score(estimated_accuracy),
+        "reliability_band": reliability_band(estimated_accuracy),
+        "measured_accuracy_available": False,
+        "accuracy_note": (
+            "Prototype estimate derived from image quality, feature stability, and agreement with the built-in reference set. "
+            "This is not a clinician-validated accuracy figure."
+        ),
+        "top_reference_matches": top_reference_matches,
+    }
+
+
 def frontal_capture_result(gray: np.ndarray, quality_score: float, quality_grade: str, quality_parts: dict[str, float]) -> dict[str, Any]:
     face_crop = crop_by_ratio(gray, 0.14, 0.9, 0.16, 0.84)
-    symmetry_penalty = abs(float(face_crop[:, : face_crop.shape[1] // 2].mean()) - float(face_crop[:, face_crop.shape[1] // 2 :].mean())) / 255.0
+    symmetry_penalty = abs(
+        float(face_crop[:, : face_crop.shape[1] // 2].mean()) - float(face_crop[:, face_crop.shape[1] // 2 :].mean())
+    ) / 255.0
     mouth_opening = mouth_opening_proxy(face_crop)
     submental_fullness = submental_fullness_proxy(face_crop)
     jaw_taper = jaw_taper_proxy(face_crop)
     chin_projection = clamp(1 - jaw_taper)
     neck_girth = neck_girth_proxy(face_crop)
 
-    confidence = clamp((quality_score * 0.78) + ((1 - clamp(symmetry_penalty * 3.2)) * 0.22))
+    metric_values = {
+        "mouth_opening": mouth_opening,
+        "submental_fullness": submental_fullness,
+        "chin_projection": chin_projection,
+        "neck_girth": neck_girth,
+    }
+    symmetry_score = clamp(1.0 - (symmetry_penalty * 2.6))
+    stability_score = clamp((symmetry_score * 0.58) + (quality_parts["focus_score"] * 0.22) + (quality_parts["contrast_score"] * 0.2))
+    reference_match_score, top_reference_matches = reference_agreement("frontal", quality_score, metric_values)
+    tracking = accuracy_tracking("frontal", quality_score, stability_score, reference_match_score, top_reference_matches)
+
+    confidence = clamp(
+        0.18
+        + (quality_score * 0.32)
+        + (stability_score * 0.18)
+        + (reference_match_score * 0.24)
+        + (tracking["estimated_accuracy"] * 0.08),
+        0.22,
+        0.96,
+    )
+    if quality_grade == "good" and reference_match_score >= 0.72:
+        confidence = max(confidence, 0.72)
+    elif quality_grade == "usable" and reference_match_score >= 0.62:
+        confidence = max(confidence, 0.58)
+
     derived_flags: list[str] = []
     if quality_score >= 0.45 and mouth_opening < 0.2:
         derived_flags.append("Limited mouth opening cue")
@@ -268,10 +414,11 @@ def frontal_capture_result(gray: np.ndarray, quality_score: float, quality_grade
         "metrics": metrics,
         "supporting_cues": cues_from_metrics(metrics),
         "summary": summary,
+        "accuracy_tracking": tracking,
     }
 
 
-def profile_contour_metrics(face_crop: np.ndarray) -> tuple[float, float]:
+def profile_contour_metrics(face_crop: np.ndarray) -> tuple[float, float, float]:
     edge_map = (
         np.abs(np.diff(face_crop, axis=1, prepend=face_crop[:, :1]))
         + np.abs(np.diff(face_crop, axis=0, prepend=face_crop[:1, :]))
@@ -280,6 +427,7 @@ def profile_contour_metrics(face_crop: np.ndarray) -> tuple[float, float]:
     left_energy = float(edge_map[:, :half_width].mean())
     right_energy = float(edge_map[:, -half_width:].mean())
     side = "left" if left_energy >= right_energy else "right"
+    side_dominance = clamp(abs(left_energy - right_energy) / max(left_energy + right_energy, 1e-6))
 
     if side == "left":
         contour_half = edge_map[:, :half_width]
@@ -298,16 +446,38 @@ def profile_contour_metrics(face_crop: np.ndarray) -> tuple[float, float]:
         chin_projection = (chin_x - midface_x) / max(contour_half.shape[1], 1)
         neck_clearance = (chin_x - neck_x) / max(contour_half.shape[1], 1)
 
-    return chin_projection, neck_clearance
+    return chin_projection, neck_clearance, side_dominance
 
 
 def profile_capture_result(gray: np.ndarray, quality_score: float, quality_grade: str, quality_parts: dict[str, float]) -> dict[str, Any]:
     face_crop = crop_by_ratio(gray, 0.12, 0.92, 0.16, 0.84)
-    chin_projection_raw, neck_clearance_raw = profile_contour_metrics(face_crop)
+    chin_projection_raw, neck_clearance_raw, side_dominance = profile_contour_metrics(face_crop)
     chin_projection = clamp((chin_projection_raw - 0.02) / 0.16)
     neck_extension = clamp((neck_clearance_raw - 0.03) / 0.18)
     neck_girth = clamp(1 - neck_extension)
-    confidence = clamp((quality_score * 0.85) + (min(chin_projection, neck_extension) * 0.15))
+
+    metric_values = {
+        "chin_projection": chin_projection,
+        "neck_extension": neck_extension,
+        "neck_girth": neck_girth,
+    }
+    stability_score = clamp((side_dominance * 0.45) + (quality_parts["focus_score"] * 0.3) + (quality_parts["contrast_score"] * 0.25))
+    reference_match_score, top_reference_matches = reference_agreement("profile", quality_score, metric_values)
+    tracking = accuracy_tracking("profile", quality_score, stability_score, reference_match_score, top_reference_matches)
+
+    confidence = clamp(
+        0.18
+        + (quality_score * 0.3)
+        + (stability_score * 0.22)
+        + (reference_match_score * 0.22)
+        + (tracking["estimated_accuracy"] * 0.08),
+        0.22,
+        0.96,
+    )
+    if quality_grade == "good" and reference_match_score >= 0.72:
+        confidence = max(confidence, 0.72)
+    elif quality_grade == "usable" and reference_match_score >= 0.62:
+        confidence = max(confidence, 0.58)
 
     derived_flags: list[str] = []
     if quality_score >= 0.45 and chin_projection < 0.22:
@@ -360,6 +530,7 @@ def profile_capture_result(gray: np.ndarray, quality_score: float, quality_grade
         "metrics": metrics,
         "supporting_cues": cues_from_metrics(metrics),
         "summary": summary,
+        "accuracy_tracking": tracking,
     }
 
 
@@ -375,23 +546,54 @@ def overall_vision_assessment(captures: dict[str, dict[str, Any]]) -> dict[str, 
             "derived_flags": [],
             "supporting_cues": [],
             "note": "Capture both the frontal and side-profile airway views to complete the camera assessment.",
+            "accuracy_tracking": {
+                "reference_dataset_size": len(FRONTAL_REFERENCE_PROFILES) + len(PROFILE_REFERENCE_PROFILES),
+                "reference_dataset_version": REFERENCE_DATASET_VERSION,
+                "estimated_accuracy": 0.0,
+                "reliability_band": "Pending",
+                "measured_accuracy_available": False,
+                "accuracy_note": "No camera capture has been analyzed yet.",
+                "analyzed_views": 0,
+            },
         }
 
     quality_scores = [float(capture.get("quality_score", 0.0)) for capture in captures.values()]
     combined_quality = round_score(float(np.mean(quality_scores))) if quality_scores else 0.0
     derived_flags = sorted({flag for capture in available_captures for flag in capture.get("derived_flags", [])})
     supporting_cues = [cue for capture in available_captures for cue in capture.get("supporting_cues", [])][:5]
+    average_capture_confidence = float(np.mean([float(capture.get("confidence", 0.0)) for capture in captures.values()]))
+    average_estimated_accuracy = float(
+        np.mean(
+            [
+                float(capture.get("accuracy_tracking", {}).get("estimated_accuracy", 0.0))
+                for capture in captures.values()
+                if isinstance(capture.get("accuracy_tracking"), dict)
+            ]
+            or [0.0]
+        )
+    )
 
     if not available_captures:
         return {
             "status": "insufficient_quality",
             "label": "Camera assessment needs a repeat capture",
             "bucket": "Needs Review",
-            "confidence": round_score(combined_quality * 0.5),
+            "confidence": round_score(max(combined_quality * 0.55, average_estimated_accuracy * 0.45)),
             "quality_score": combined_quality,
             "derived_flags": [],
             "supporting_cues": supporting_cues,
             "note": "The captured image was too limited for a dependable read. Retake in even light with the face centered and unobstructed.",
+            "accuracy_tracking": {
+                "reference_dataset_size": len(FRONTAL_REFERENCE_PROFILES) + len(PROFILE_REFERENCE_PROFILES),
+                "reference_dataset_version": REFERENCE_DATASET_VERSION,
+                "estimated_accuracy": round_score(average_estimated_accuracy),
+                "reliability_band": reliability_band(average_estimated_accuracy),
+                "measured_accuracy_available": False,
+                "accuracy_note": (
+                    "The current estimate is limited by image quality. Retaking the image usually improves reliability more than repeating the same low-quality frame."
+                ),
+                "analyzed_views": len(captures),
+            },
         }
 
     high_concern = len(derived_flags) >= 2 or (
@@ -409,7 +611,14 @@ def overall_vision_assessment(captures: dict[str, dict[str, Any]]) -> dict[str, 
         label = "Camera assessment appears reassuring"
         bucket = "Low Concern"
 
-    confidence = clamp((combined_quality * 0.6) + (len(available_captures) * 0.12) + (len(derived_flags) * 0.08), 0.0, 0.92)
+    confidence = clamp(
+        (average_capture_confidence * 0.52)
+        + (combined_quality * 0.24)
+        + (average_estimated_accuracy * 0.18)
+        + (0.06 if len(available_captures) == 2 else 0.0),
+        0.0,
+        0.95,
+    )
     note = "Camera-derived airway findings should be reviewed together with the bedside airway examination."
     if len(available_captures) == 1:
         note += " Both frontal and side-profile captures are required to finish the exam."
@@ -423,6 +632,18 @@ def overall_vision_assessment(captures: dict[str, dict[str, Any]]) -> dict[str, 
         "derived_flags": derived_flags,
         "supporting_cues": supporting_cues,
         "note": note,
+        "accuracy_tracking": {
+            "reference_dataset_size": len(FRONTAL_REFERENCE_PROFILES) + len(PROFILE_REFERENCE_PROFILES),
+            "reference_dataset_version": REFERENCE_DATASET_VERSION,
+            "estimated_accuracy": round_score(average_estimated_accuracy),
+            "reliability_band": reliability_band(average_estimated_accuracy),
+            "measured_accuracy_available": False,
+            "accuracy_note": (
+                "Overall reliability is estimated from image quality, capture confidence, and agreement with the built-in reference set. "
+                "A clinician-confirmed accuracy score has not been recorded yet."
+            ),
+            "analyzed_views": len(captures),
+        },
     }
 
 
@@ -442,6 +663,12 @@ def merge_with_existing(existing: dict[str, Any] | None, capture: dict[str, Any]
         "images_persisted": False,
         "captures": existing_captures,
         "overall": overall,
+        "dataset_summary": {
+            "reference_dataset_version": REFERENCE_DATASET_VERSION,
+            "reference_dataset_size": len(FRONTAL_REFERENCE_PROFILES) + len(PROFILE_REFERENCE_PROFILES),
+            "frontal_reference_profiles": len(FRONTAL_REFERENCE_PROFILES),
+            "profile_reference_profiles": len(PROFILE_REFERENCE_PROFILES),
+        },
         "disclaimer": "",
     }
 

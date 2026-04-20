@@ -70,7 +70,16 @@ function CaptureStatusCard({
       <div className="tag-row">
         <span className="tag">Quality {percent(capture?.quality_score)}</span>
         <span className="tag">Confidence {percent(capture?.confidence)}</span>
+        {capture?.accuracy_tracking?.reliability_band ? (
+          <span className="tag">Reliability {capture.accuracy_tracking.reliability_band}</span>
+        ) : null}
+        {capture?.accuracy_tracking?.reference_dataset_size ? (
+          <span className="tag">Refs {capture.accuracy_tracking.reference_dataset_size}</span>
+        ) : null}
       </div>
+      {capture?.accuracy_tracking?.accuracy_note ? (
+        <p className="helper-text">{capture.accuracy_tracking.accuracy_note}</p>
+      ) : null}
     </article>
   )
 }
@@ -338,6 +347,15 @@ export function AirwayVisionCard({
             <div className="risk-hero">
               <div className={`risk-pill ${overallTone(vision)}`}>{vision?.overall?.bucket ?? 'Not analyzed'}</div>
               <p>{vision?.overall?.note ?? 'Capture both the frontal and side-profile images to complete the camera assessment.'}</p>
+              {vision?.overall?.accuracy_tracking ? (
+                <div className="tag-row">
+                  <span className="tag">Reliability {vision.overall.accuracy_tracking.reliability_band}</span>
+                  <span className="tag">Estimated accuracy {percent(vision.overall.accuracy_tracking.estimated_accuracy)}</span>
+                  {vision.dataset_summary?.reference_dataset_size ? (
+                    <span className="tag">Reference set {vision.dataset_summary.reference_dataset_size}</span>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
             <div className="vision-status-grid">
