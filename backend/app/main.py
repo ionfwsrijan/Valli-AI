@@ -14,6 +14,7 @@ from sqlmodel import Session, select
 from .conversation_router import classify_input
 from .database import create_db_and_tables, get_session
 from .models import AssessmentSession
+from .patient_directory import patient_record_for_phone
 from .policy_rag import retrieve_policy_answer, should_hide_policy_sources
 from .questionnaire import (
     QUESTION_MAP,
@@ -45,6 +46,8 @@ ANSWER_CONFIRMATION = "Got it, thank you."
 CAMERA_EXAM_PROMPT = (
     "The questionnaire is complete. Please continue to the camera airway assessment page using a frontal view and a side profile to finish the assessment."
 )
+PHONE_LOOKUP_CONFIRMATION = "I found the patient's basic details from that phone number and filled them in."
+PHONE_LOOKUP_NOT_FOUND = "I couldn't find that phone number in the demo patient directory. Please enter a registered 10-digit number."
 
 
 def cors_allowed_origins() -> list[str]:
@@ -176,6 +179,15 @@ def should_add_answer_confirmation(routing: dict[str, Any], completed_current_qu
     )
 
 
+def apply_phone_demographics(answers: dict[str, Any], patient_record: dict[str, Any]) -> None:
+    answers["patient_name"] = patient_record.get("patient_name")
+    answers["patient_age"] = patient_record.get("patient_age")
+    answers["patient_sex"] = patient_record.get("patient_sex")
+    answers["height_cm"] = patient_record.get("height_cm")
+    answers["weight_kg"] = patient_record.get("weight_kg")
+    answers["demographics_prefilled_from_phone"] = True
+
+
 def get_assessment_or_404(session_id: str, db: Session) -> AssessmentSession:
     assessment = db.get(AssessmentSession, session_id)
     if assessment is None:
@@ -253,8 +265,20 @@ def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends
     transcript.append(transcript_entry("patient", payload.answer_text, current.id))
 
     routing = classify_input(current, payload.answer_text, answers)
+    answer_confirmation = ANSWER_CONFIRMATION
+    lookup_failure_message: str | None = None
     if routing["mode"] in {"answer_only", "mixed"} and routing["answer_text"] is not None:
-        apply_parsed_answer(current, answers, routing["parsed_answer"])
+        if current.input_type == "phone" and isinstance(routing["parsed_answer"], str):
+            patient_record = patient_record_for_phone(routing["parsed_answer"])
+            if patient_record is None:
+                lookup_failure_message = PHONE_LOOKUP_NOT_FOUND
+                routing["parsed_answer"] = None
+            else:
+                apply_parsed_answer(current, answers, routing["parsed_answer"])
+                apply_phone_demographics(answers, patient_record)
+                answer_confirmation = PHONE_LOOKUP_CONFIRMATION
+        elif routing["parsed_answer"] is not None or current.input_type != "phone":
+            apply_parsed_answer(current, answers, routing["parsed_answer"])
 
     risk = compute_risk_profile(answers)
 
@@ -269,7 +293,9 @@ def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends
 
     if routing["mode"] in {"answer_only", "mixed"}:
         if not is_question_complete(current, answers):
-            correction = invalid_answer_message(current, routing["answer_text"] or payload.answer_text, routing["parsed_answer"])
+            correction = lookup_failure_message or invalid_answer_message(
+                current, routing["answer_text"] or payload.answer_text, routing["parsed_answer"]
+            )
             if correction:
                 transcript.append(transcript_entry("ai", correction, current.id))
             transcript.append(transcript_entry("ai", format_question_prompt(current, answers)))
@@ -277,7 +303,7 @@ def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends
             assessment.status = "in_progress"
         else:
             if should_add_answer_confirmation(routing, True):
-                transcript.append(transcript_entry("ai", ANSWER_CONFIRMATION))
+                transcript.append(transcript_entry("ai", answer_confirmation))
             upcoming = next_question(current.id, answers)
             if upcoming is not None:
                 transcript.append(transcript_entry("ai", format_question_prompt(upcoming, answers), upcoming.id))

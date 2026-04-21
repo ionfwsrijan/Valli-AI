@@ -4,6 +4,8 @@ from dataclasses import asdict, dataclass, field
 import re
 from typing import Any
 
+from .patient_directory import normalize_phone_number
+
 
 @dataclass(frozen=True)
 class QuestionOption:
@@ -186,19 +188,13 @@ PATIENT_IDENTITY_QUESTIONS = [
             QuestionOption("medical_records", "Medical Records"),
         ],
     ),
-    Question("patient_name", "patient_name", "What is your name?", "Patient Details"),
-    Question("patient_age", "patient_age", "What is your age?", "Patient Details", "integer", "For example, 42"),
     Question(
-        "patient_sex",
-        "patient_sex",
-        "What's your gender?",
+        "patient_phone_number",
+        "patient_phone_number",
+        "What is your phone number?",
         "Patient Details",
-        "choice",
-        options=[
-            QuestionOption("male", "Male"),
-            QuestionOption("female", "Female"),
-            QuestionOption("other", "Other"),
-        ],
+        "phone",
+        helper_text="For this demo, use a registered 10-digit phone number.",
     ),
     Question(
         "uhid_no",
@@ -215,14 +211,6 @@ PATIENT_IDENTITY_QUESTIONS = [
         "Patient Details",
         helper_text="You can skip this if you do not have it.",
         optional=True,
-    ),
-    Question(
-        "body_metrics",
-        "body_metrics",
-        "Please tell me both your weight in kilograms and your height in centimeters.",
-        "Patient Details",
-        "body_metrics",
-        helper_text="For example: 68 kg and 162 cm.",
     ),
     Question(
         "preoperative_diagnosis",
@@ -889,11 +877,7 @@ def numeric_question_rules(question: Question) -> tuple[set[str], float | None, 
     max_value: float | None = None
     lowered_text = question.text.lower()
 
-    if question.id == "patient_age":
-        allowed_words.update({"age", "aged", "old", "year", "years", "yr", "yrs"})
-        min_value = 0
-        max_value = 120
-    elif question.id == "previous_surgery_year":
+    if question.id == "previous_surgery_year":
         allowed_words.update({"year", "years", "in"})
         min_value = 1900
         max_value = 2100
@@ -914,8 +898,6 @@ def numeric_question_rules(question: Question) -> tuple[set[str], float | None, 
 
 
 def numeric_validation_message(question: Question) -> str:
-    if question.id == "patient_age":
-        return "Thanks. I just need your age as a number in years, for example 42."
     if question.id == "previous_surgery_year":
         return "Thanks. I just need the year as a 4-digit number, for example 2020."
     if question.field.endswith("_duration_years"):
@@ -927,48 +909,8 @@ def numeric_validation_message(question: Question) -> str:
     return "Thanks. I just need a number for this answer."
 
 
-def parse_body_metrics(raw_answer: str, answers: dict[str, Any] | None = None) -> dict[str, float]:
-    lowered = raw_answer.strip().lower()
-    active_answers = answers or {}
-    parsed: dict[str, float] = {}
-
-    weight_match = re.search(r"(\d+(?:\.\d+)?)\s*(?:kg|kgs|kilogram|kilograms)\b", lowered)
-    height_match = re.search(r"(\d+(?:\.\d+)?)\s*(?:cm|cms|centimeter|centimeters)\b", lowered)
-
-    if weight_match:
-        parsed["weight_kg"] = round(float(weight_match.group(1)), 2)
-    if height_match:
-        parsed["height_cm"] = round(float(height_match.group(1)), 2)
-
-    numbers = extract_numbers(lowered)
-    if len(numbers) >= 2:
-        if "weight_kg" not in parsed and min(numbers[0], numbers[1]) <= 300:
-            parsed["weight_kg"] = round(min(numbers[0], numbers[1]), 2)
-        if "height_cm" not in parsed and max(numbers[0], numbers[1]) <= 300:
-            parsed["height_cm"] = round(max(numbers[0], numbers[1]), 2)
-    elif len(numbers) == 1:
-        value = round(numbers[0], 2)
-        missing = body_metrics_missing_fields(active_answers)
-        if missing == ["weight_kg"]:
-            parsed["weight_kg"] = value
-        elif missing == ["height_cm"]:
-            parsed["height_cm"] = value
-        elif "weight" in lowered and value <= 300:
-            parsed["weight_kg"] = value
-        elif "height" in lowered and value <= 300:
-            parsed["height_cm"] = value
-        elif value <= 100:
-            parsed["weight_kg"] = value
-        elif value > 100:
-            parsed["height_cm"] = value
-
-    return parsed
-
-
 def render_question_text(question: Question, answers: dict[str, Any] | None = None) -> str:
-    if question.id == "body_metrics":
-        text = body_metrics_followup_text(answers)
-    elif question.id in COMPOUND_QUESTION_FIELDS:
+    if question.id in COMPOUND_QUESTION_FIELDS:
         text = compound_followup_text(question.id, answers or {})
     else:
         text = question.text.strip()
@@ -978,27 +920,12 @@ def render_question_text(question: Question, answers: dict[str, Any] | None = No
         return text
 
     identity_overrides = {
-        "patient_name": "What's the patient's name?",
-        "patient_age": "What's the patient's age?",
-        "patient_sex": "What's the patient's gender?",
+        "patient_phone_number": "What's the patient's phone number?",
         "uhid_no": "What is the patient's UHID number?",
         "ip_no": "What is the patient's IP number?",
     }
     if question.id in identity_overrides:
         return identity_overrides[question.id]
-
-    body_metrics_overrides = {
-        "Please tell me both your weight in kilograms and your height in centimeters.":
-            "Please tell me both the patient's weight in kilograms and height in centimeters.",
-        "Thank you. I still need your weight in kilograms.":
-            "Thank you. I still need the patient's weight in kilograms.",
-        "Thank you. I still need your height in centimeters.":
-            "Thank you. I still need the patient's height in centimeters.",
-        "Thank you. I still need both your weight in kilograms and your height in centimeters.":
-            "Thank you. I still need both the patient's weight in kilograms and height in centimeters.",
-    }
-    if question.id == "body_metrics":
-        return body_metrics_overrides.get(text, text)
 
     return text
 
@@ -1006,8 +933,7 @@ def render_question_text(question: Question, answers: dict[str, Any] | None = No
 def format_question_prompt(question: Question, answers: dict[str, Any] | None = None) -> str:
     parts = [render_question_text(question, answers)]
     if question.helper_text:
-        if question.id != "body_metrics" or not (answers and (answers.get("weight_kg") is not None or answers.get("height_cm") is not None)):
-            parts.append(question.helper_text.strip())
+        parts.append(question.helper_text.strip())
     if question.options:
         parts.extend(option.label.strip() for option in question.options)
     return "\n".join(part for part in parts if part)
@@ -1017,8 +943,6 @@ def question_to_payload(question: Question, answers: dict[str, Any] | None = Non
     payload = asdict(question)
     payload["options"] = [asdict(option) for option in question.options]
     payload["text"] = render_question_text(question, answers)
-    if question.id == "body_metrics" and answers and (answers.get("weight_kg") is not None or answers.get("height_cm") is not None):
-        payload["helper_text"] = None
     if question.id in COMPOUND_QUESTION_FIELDS and answers and len(missing_compound_fields(question.id, answers)) < len(
         COMPOUND_QUESTION_FIELDS[question.id]
     ):
@@ -1075,10 +999,10 @@ def invalid_answer_message(question: Question, raw_answer: str, parsed_answer: A
     cleaned = raw_answer.strip()
     if not cleaned:
         return None
+    if question.input_type == "phone" and parsed_answer is None:
+        return "Thanks. I just need a registered 10-digit phone number, for example 9876501234."
     if question.input_type in {"integer", "number"} and parsed_answer is None:
         return numeric_validation_message(question)
-    if question.input_type == "body_metrics" and isinstance(parsed_answer, dict) and not parsed_answer:
-        return "Thanks. I still need your weight and height as numbers, for example 68 kg and 162 cm."
     return None
 
 
@@ -1113,8 +1037,8 @@ def parse_choice(question: Question, raw_answer: str) -> str:
 def parse_answer(question: Question, raw_answer: str, answers: dict[str, Any] | None = None) -> Any:
     if question.optional and is_skip_answer(raw_answer):
         return None
-    if question.input_type == "body_metrics":
-        return parse_body_metrics(raw_answer, answers)
+    if question.input_type == "phone":
+        return normalize_phone_number(raw_answer)
     if question.id in COMPOUND_QUESTION_FIELDS:
         return parse_compound_question(question, raw_answer, answers)
     if question.input_type == "boolean":
@@ -1130,18 +1054,6 @@ def parse_answer(question: Question, raw_answer: str, answers: dict[str, Any] | 
 
 
 def apply_parsed_answer(question: Question, answers: dict[str, Any], parsed_answer: Any) -> None:
-    if question.id == "body_metrics":
-        metrics = parsed_answer if isinstance(parsed_answer, dict) else {}
-        if "weight_kg" in metrics:
-            answers["weight_kg"] = metrics["weight_kg"]
-        if "height_cm" in metrics:
-            answers["height_cm"] = metrics["height_cm"]
-        if not body_metrics_missing_fields(answers):
-            answers["body_metrics"] = True
-        else:
-            answers.pop("body_metrics", None)
-        return
-
     if question.id in COMPOUND_QUESTION_FIELDS:
         details = parsed_answer if isinstance(parsed_answer, dict) else {}
         for field_name, value in details.items():
@@ -1157,8 +1069,6 @@ def apply_parsed_answer(question: Question, answers: dict[str, Any], parsed_answ
 
 
 def is_question_complete(question: Question, answers: dict[str, Any]) -> bool:
-    if question.id == "body_metrics":
-        return not body_metrics_missing_fields(answers)
     if question.id in COMPOUND_QUESTION_FIELDS:
         return not missing_compound_fields(question.id, answers)
 
@@ -1169,6 +1079,8 @@ def is_question_complete(question: Question, answers: dict[str, Any]) -> bool:
     if question.input_type in {"integer", "number"}:
         value = answers.get(question.field)
         return isinstance(value, (int, float)) and not isinstance(value, bool)
+    if question.input_type == "phone":
+        return isinstance(answers.get(question.field), str) and bool(answers.get(question.field))
 
     return question.field in answers
 

@@ -46,6 +46,9 @@ def has_clear_answer(question: Question, answer_text: str, answers: dict[str, An
     if question.input_type == "body_metrics":
         parsed = parse_answer(question, cleaned, answers)
         return isinstance(parsed, dict) and bool(parsed)
+    if question.input_type == "phone":
+        parsed = parse_answer(question, cleaned, answers)
+        return isinstance(parsed, str) and bool(parsed)
     if question.input_type == "boolean":
         return parse_boolean(cleaned) is not None
     if question.input_type == "integer":
@@ -112,7 +115,7 @@ def classify_input(question: Question, raw_text: str, answers: dict[str, Any] | 
         }
 
     if (
-        question.input_type in {"boolean", "choice", "body_metrics"}
+        question.input_type in {"boolean", "choice", "body_metrics", "phone"}
         and has_clear_answer(question, cleaned, answers)
         and not detect_policy_question(cleaned)
         and not detect_off_topic_question(cleaned)
