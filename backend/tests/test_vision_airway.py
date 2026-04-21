@@ -7,6 +7,9 @@ from PIL import Image, ImageDraw
 from app.main import app
 
 
+DEMO_PHONE_NUMBER = "9876501234"
+
+
 def synthetic_frontal_data_url() -> str:
     image = Image.new("RGB", (320, 420), (236, 228, 220))
     draw = ImageDraw.Draw(image)
@@ -66,12 +69,9 @@ def test_airway_vision_capture_updates_session_and_completes_after_both_views() 
 
         answers = {
             "history_source": "Patient",
-            "patient_name": "Jane Example",
-            "patient_age": "29",
-            "patient_sex": "Female",
+            "patient_phone_number": DEMO_PHONE_NUMBER,
             "uhid_no": "UH-2201",
             "ip_no": "IP-119",
-            "body_metrics": "68 kg and 162 cm",
             "preoperative_diagnosis": "Fibroid uterus",
             "proposed_procedure": "Total abdominal hysterectomy",
             "previous_surgery": "No",

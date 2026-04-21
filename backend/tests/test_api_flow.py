@@ -1,8 +1,11 @@
 from fastapi.testclient import TestClient
 
 from app.conversation_router import classify_input
-from app.questionnaire import QUESTION_MAP, apply_parsed_answer, is_question_complete, parse_answer, question_to_payload
+from app.questionnaire import QUESTION_MAP, Question, QuestionOption, apply_parsed_answer, is_question_complete, parse_answer, question_to_payload
 from app.main import app
+
+
+DEMO_PHONE_NUMBER = "9876501234"
 
 
 def test_session_creation_and_progression() -> None:
@@ -23,10 +26,13 @@ def test_session_creation_and_progression() -> None:
         assert progressed.status_code == 200
         progressed_payload = progressed.json()
         assert progressed_payload["answers"]["history_source"] == "relative_guardian"
-        assert progressed_payload["current_question"]["id"] == "patient_name"
-        assert progressed_payload["current_question"]["text"] == "What's the patient's name?"
+        assert progressed_payload["current_question"]["id"] == "patient_phone_number"
+        assert progressed_payload["current_question"]["text"] == "What's the patient's phone number?"
         assert progressed_payload["transcript"][-2]["message"] == "Got it, thank you."
-        assert progressed_payload["transcript"][-1]["message"] == "What's the patient's name?"
+        assert (
+            progressed_payload["transcript"][-1]["message"]
+            == "What's the patient's phone number?\nFor this demo, use a registered 10-digit phone number."
+        )
         assert len(progressed_payload["transcript"]) == 5
 
 
@@ -41,8 +47,8 @@ def test_history_source_patient_keeps_patient_facing_identity_questions() -> Non
         ).json()
 
         assert progressed["answers"]["history_source"] == "patient"
-        assert progressed["current_question"]["id"] == "patient_name"
-        assert progressed["current_question"]["text"] == "What is your name?"
+        assert progressed["current_question"]["id"] == "patient_phone_number"
+        assert progressed["current_question"]["text"] == "What is your phone number?"
 
 
 def test_history_source_medical_records_keeps_patient_referenced_identity_questions() -> None:
@@ -56,12 +62,17 @@ def test_history_source_medical_records_keeps_patient_referenced_identity_questi
         ).json()
 
         assert progressed["answers"]["history_source"] == "medical_records"
-        assert progressed["current_question"]["id"] == "patient_name"
-        assert progressed["current_question"]["text"] == "What's the patient's name?"
+        assert progressed["current_question"]["id"] == "patient_phone_number"
+        assert progressed["current_question"]["text"] == "What's the patient's phone number?"
 
 
 def test_questionnaire_defers_airway_exam_to_camera_stage() -> None:
-    assert "body_metrics" in QUESTION_MAP
+    assert "patient_phone_number" in QUESTION_MAP
+    assert QUESTION_MAP["patient_phone_number"].input_type == "phone"
+    assert "patient_name" not in QUESTION_MAP
+    assert "patient_age" not in QUESTION_MAP
+    assert "patient_sex" not in QUESTION_MAP
+    assert "body_metrics" not in QUESTION_MAP
     assert "weight_kg" not in QUESTION_MAP
     assert "height_cm" not in QUESTION_MAP
     assert "airway_limited_mouth_opening" not in QUESTION_MAP
@@ -86,7 +97,6 @@ def test_questionnaire_defers_airway_exam_to_camera_stage() -> None:
     assert "anesthesiologist_suggestions" in QUESTION_MAP
     assert len(QUESTION_MAP["nyha_class"].options) == 4
     assert len(QUESTION_MAP["mmrc_grade"].options) == 5
-    assert QUESTION_MAP["patient_sex"].text == "What's your gender?"
     assert "has_presenting_comorbidity" not in QUESTION_MAP
     assert QUESTION_MAP["diabetes"].text == "Do you have diabetes?"
     assert QUESTION_MAP["hypertension"].text == "Do you have high BP (blood pressure)?"
@@ -117,39 +127,43 @@ def test_mixed_answer_and_policy_question_keeps_assessment_on_track() -> None:
             f"/api/sessions/{session['session_id']}/answer",
             json={"answer_text": "Patient"},
         ).json()
-        session = client.post(
-            f"/api/sessions/{session['session_id']}/answer",
-            json={"answer_text": "Jane Example"},
-        ).json()
-        assert session["current_question"]["id"] == "patient_age"
+        assert session["current_question"]["id"] == "patient_phone_number"
 
         mixed = client.post(
             f"/api/sessions/{session['session_id']}/answer",
-            json={"answer_text": "29 and can I drink water before surgery?"},
+            json={"answer_text": f"{DEMO_PHONE_NUMBER} and can I drink water before surgery?"},
         )
         assert mixed.status_code == 200
         payload = mixed.json()
-        assert payload["answers"]["patient_age"] == 29
-        assert payload["current_question"]["id"] == "patient_sex"
-        assert payload["current_question"]["text"] == "What's your gender?"
-        assert payload["current_question"]["prompt_text"] == "What's your gender?\nMale\nFemale\nOther"
-        assert payload["transcript"][-1]["message"] == "What's your gender?\nMale\nFemale\nOther"
+        assert payload["answers"]["patient_phone_number"] == DEMO_PHONE_NUMBER
+        assert payload["answers"]["patient_name"] == "Asha Raman"
+        assert payload["answers"]["patient_age"] == 34
+        assert payload["answers"]["patient_sex"] == "female"
+        assert payload["answers"]["weight_kg"] == 68
+        assert payload["answers"]["height_cm"] == 162
+        assert payload["current_question"]["id"] == "uhid_no"
+        assert payload["transcript"][-1]["message"] == "What is your UHID number?\nYou can skip this if you do not have it."
         fasting_messages = [item["message"] for item in payload["transcript"] if "fasting" in item["message"].lower()]
         assert fasting_messages
         assert all("Source:" not in message for message in fasting_messages)
 
 
-def test_optional_ids_can_be_skipped_and_body_metrics_follow_up_until_complete() -> None:
+def test_phone_lookup_prefills_demographics_then_moves_to_optional_ids() -> None:
     with TestClient(app) as client:
         session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
         session_id = session["session_id"]
 
-        for answer in ["Patient", "Jane Example", "29", "Female"]:
+        for answer in ["Patient", DEMO_PHONE_NUMBER]:
             session = client.post(
                 f"/api/sessions/{session_id}/answer",
                 json={"answer_text": answer},
             ).json()
 
+        assert session["answers"]["patient_name"] == "Asha Raman"
+        assert session["answers"]["patient_age"] == 34
+        assert session["answers"]["patient_sex"] == "female"
+        assert session["answers"]["weight_kg"] == 68
+        assert session["answers"]["height_cm"] == 162
         assert session["current_question"]["id"] == "uhid_no"
         assert session["current_question"]["optional"] is True
 
@@ -165,54 +179,38 @@ def test_optional_ids_can_be_skipped_and_body_metrics_follow_up_until_complete()
             json={"answer_text": "skip"},
         ).json()
         assert session["answers"]["ip_no"] is None
-        assert session["current_question"]["id"] == "body_metrics"
-
-        session = client.post(
-            f"/api/sessions/{session_id}/answer",
-            json={"answer_text": "68 kg"},
-        ).json()
-        assert session["answers"]["weight_kg"] == 68
-        assert session["current_question"]["id"] == "body_metrics"
-        assert session["current_question"]["text"] == "Thank you. I still need your height in centimeters."
-
-        session = client.post(
-            f"/api/sessions/{session_id}/answer",
-            json={"answer_text": "162 cm"},
-        ).json()
-        assert session["answers"]["height_cm"] == 162
-        assert session["answers"]["body_metrics"] is True
         assert session["current_question"]["id"] == "preoperative_diagnosis"
 
 
-def test_body_metrics_can_include_policy_question_without_losing_progress() -> None:
+def test_phone_lookup_can_include_policy_question_without_losing_progress() -> None:
     with TestClient(app) as client:
         session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
         session_id = session["session_id"]
 
-        for answer in ["Patient", "Jane Example", "29", "Female", "skip", "skip"]:
+        for answer in ["Patient"]:
             session = client.post(
                 f"/api/sessions/{session_id}/answer",
                 json={"answer_text": answer},
             ).json()
 
-        assert session["current_question"]["id"] == "body_metrics"
+        assert session["current_question"]["id"] == "patient_phone_number"
 
         session = client.post(
             f"/api/sessions/{session_id}/answer",
-            json={"answer_text": "I am 68 kg and 182 cm. Can I eat pizza? I have surgery in an hour."},
+            json={"answer_text": f"My number is {DEMO_PHONE_NUMBER}. Can I eat pizza? I have surgery in an hour."},
         ).json()
 
         assert session["answers"]["weight_kg"] == 68
-        assert session["answers"]["height_cm"] == 182
-        assert session["answers"]["body_metrics"] is True
-        assert session["current_question"]["id"] == "preoperative_diagnosis"
+        assert session["answers"]["height_cm"] == 162
+        assert session["answers"]["patient_name"] == "Asha Raman"
+        assert session["current_question"]["id"] == "uhid_no"
         assert any(
             "do not eat pizza or other solid food now" in item["message"].lower()
             for item in session["transcript"]
         )
 
 
-def test_invalid_numeric_answer_keeps_same_question_and_reasks() -> None:
+def test_unknown_phone_number_keeps_same_question_and_reasks() -> None:
     with TestClient(app) as client:
         session = client.post("/api/sessions", json={"consent_for_ai": True}).json()
         session_id = session["session_id"]
@@ -221,29 +219,38 @@ def test_invalid_numeric_answer_keeps_same_question_and_reasks() -> None:
             f"/api/sessions/{session_id}/answer",
             json={"answer_text": "Patient"},
         ).json()
-
-        session = client.post(
-            f"/api/sessions/{session_id}/answer",
-            json={"answer_text": "Jane Example"},
-        ).json()
-        assert session["current_question"]["id"] == "patient_age"
+        assert session["current_question"]["id"] == "patient_phone_number"
 
         session = client.post(
             f"/api/sessions/{session_id}/answer",
             json={"answer_text": "M"},
         ).json()
 
-        assert session["current_question"]["id"] == "patient_age"
-        assert session["answers"].get("patient_age") is None
-        assert session["transcript"][-2]["message"] == "Thanks. I just need your age as a number in years, for example 42."
-        assert session["transcript"][-1]["message"] == "What is your age?"
+        assert session["current_question"]["id"] == "patient_phone_number"
+        assert session["answers"].get("patient_phone_number") is None
+        assert (
+            session["transcript"][-2]["message"]
+            == "Thanks. I just need a registered 10-digit phone number, for example 9876501234."
+        )
+        assert session["transcript"][-1]["message"] == "What is your phone number?\nFor this demo, use a registered 10-digit phone number."
 
         session = client.post(
             f"/api/sessions/{session_id}/answer",
-            json={"answer_text": "I am 29 years old"},
+            json={"answer_text": "8000000000"},
         ).json()
-        assert session["answers"]["patient_age"] == 29
-        assert session["current_question"]["id"] == "patient_sex"
+        assert session["current_question"]["id"] == "patient_phone_number"
+        assert session["answers"].get("patient_phone_number") is None
+        assert (
+            session["transcript"][-2]["message"]
+            == "I couldn't find that phone number in the demo patient directory. Please enter a registered 10-digit number."
+        )
+
+        session = client.post(
+            f"/api/sessions/{session_id}/answer",
+            json={"answer_text": DEMO_PHONE_NUMBER},
+        ).json()
+        assert session["answers"]["patient_phone_number"] == DEMO_PHONE_NUMBER
+        assert session["current_question"]["id"] == "uhid_no"
 
 
 def test_choice_answers_do_not_trigger_policy_routing() -> None:
@@ -265,7 +272,19 @@ def test_choice_answers_do_not_trigger_policy_routing() -> None:
 
 
 def test_gender_choice_does_not_map_female_to_male() -> None:
-    parsed_gender = parse_answer(QUESTION_MAP["patient_sex"], "Female")
+    gender_question = Question(
+        "patient_sex",
+        "patient_sex",
+        "What's your gender?",
+        "Patient Details",
+        "choice",
+        options=[
+            QuestionOption("male", "Male"),
+            QuestionOption("female", "Female"),
+            QuestionOption("other", "Other"),
+        ],
+    )
+    parsed_gender = parse_answer(gender_question, "Female")
     assert parsed_gender == "female"
 
 
@@ -364,10 +383,10 @@ def test_policy_question_during_name_step_reasks_name_instead_of_skipping() -> N
 
         assert response.status_code == 200
         payload = response.json()
-        assert "patient_name" not in payload["answers"]
-        assert payload["current_question"]["id"] == "patient_name"
+        assert "patient_phone_number" not in payload["answers"]
+        assert payload["current_question"]["id"] == "patient_phone_number"
         assert any("do not eat pizza or other solid food now" in item["message"].lower() for item in payload["transcript"])
-        assert payload["transcript"][-1]["message"] == "What is your name?"
+        assert payload["transcript"][-1]["message"] == "What is your phone number?\nFor this demo, use a registered 10-digit phone number."
 
 
 def test_off_topic_question_politely_redirects_without_consuming_answer() -> None:
@@ -396,10 +415,10 @@ def test_mixed_answer_and_off_topic_question_records_answer_then_redirects() -> 
         assert mixed.status_code == 200
         payload = mixed.json()
         assert payload["answers"]["history_source"] == "patient"
-        assert payload["current_question"]["id"] == "patient_name"
+        assert payload["current_question"]["id"] == "patient_phone_number"
         assert payload["transcript"][-2]["message"].startswith("I've recorded your answer.")
         assert "I'm here to help with your pre-anesthetic assessment" in payload["transcript"][-2]["message"]
-        assert payload["transcript"][-1]["message"] == "What is your name?"
+        assert payload["transcript"][-1]["message"] == "What is your phone number?\nFor this demo, use a registered 10-digit phone number."
 
 
 def test_mixed_answer_and_generic_off_topic_question_are_both_handled() -> None:
@@ -413,7 +432,7 @@ def test_mixed_answer_and_generic_off_topic_question_are_both_handled() -> None:
         assert mixed.status_code == 200
         payload = mixed.json()
         assert payload["answers"]["history_source"] == "patient"
-        assert payload["current_question"]["id"] == "patient_name"
+        assert payload["current_question"]["id"] == "patient_phone_number"
         assert payload["transcript"][-2]["message"].startswith("I've recorded your answer.")
         assert "I'm here to help with your pre-anesthetic assessment" in payload["transcript"][-2]["message"]
-        assert payload["transcript"][-1]["message"] == "What is your name?"
+        assert payload["transcript"][-1]["message"] == "What is your phone number?\nFor this demo, use a registered 10-digit phone number."
