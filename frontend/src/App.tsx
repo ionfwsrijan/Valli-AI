@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   createSession,
   fetchReport,
   fetchSession,
   fetchSessions,
+  fetchSpeechAudio,
   submitAnswer,
   submitVisionAirwayCapture,
   warmBackend,
@@ -325,6 +326,9 @@ export default function App() {
   const [availableVoices, setAvailableVoices] = useState<
     SpeechSynthesisVoice[]
   >([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
+  const speechRequestIdRef = useRef(0);
 
   const speech = useSpeechRecognition(speechLocale(language));
   const labels = uiText(language);
@@ -476,6 +480,23 @@ export default function App() {
     };
   }, [mobileMenuOpen]);
 
+  useEffect(() => {
+    return () => {
+      speechRequestIdRef.current += 1;
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+      }
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+        audioUrlRef.current = null;
+      }
+    };
+  }, []);
+
   const refreshDashboard = async () => {
     try {
       const items = await fetchSessions();
@@ -525,19 +546,31 @@ export default function App() {
     { id: "records", label: "Records" },
   ];
 
-  const speakEntries = (
-    messages: string[],
-    options: { force?: boolean; rate?: number } = {},
-  ) => {
-    const { force = false, rate = speechRate } = options;
-    if ((!autoSpeak && !force) || !("speechSynthesis" in window)) {
-      return;
+  const clearAudioPlayback = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.src = "";
     }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+  };
 
-    const lines = messages
-      .map((message) => translateText(spokenText(message), language))
-      .filter(Boolean);
-    if (!lines.length) {
+  const stopAssistantSpeech = () => {
+    speechRequestIdRef.current += 1;
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    clearAudioPlayback();
+  };
+
+  const speakEntriesWithBrowser = (
+    lines: string[],
+    rate: number,
+  ) => {
+    if (!("speechSynthesis" in window)) {
       return;
     }
 
@@ -560,6 +593,57 @@ export default function App() {
       utterance.pitch = SPEECH_PITCH;
       synth.speak(utterance);
     });
+  };
+
+  const speakEntries = async (
+    messages: string[],
+    options: { force?: boolean; rate?: number } = {},
+  ) => {
+    const { force = false, rate = speechRate } = options;
+    if (!autoSpeak && !force) {
+      return;
+    }
+
+    const lines = messages
+      .map((message) => translateText(spokenText(message), language))
+      .filter(Boolean);
+    if (!lines.length) {
+      return;
+    }
+
+    const requestId = speechRequestIdRef.current + 1;
+    speechRequestIdRef.current = requestId;
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    clearAudioPlayback();
+
+    try {
+      const audioBlob = await fetchSpeechAudio(lines.join("\n\n"), language);
+      if (speechRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      const objectUrl = URL.createObjectURL(audioBlob);
+      const audio = audioRef.current ?? new Audio();
+      audioRef.current = audio;
+      audioUrlRef.current = objectUrl;
+      audio.src = objectUrl;
+      audio.onended = () => {
+        if (audioUrlRef.current === objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+          audioUrlRef.current = null;
+        }
+      };
+      await audio.play();
+      return;
+    } catch {
+      if (speechRequestIdRef.current !== requestId) {
+        return;
+      }
+      clearAudioPlayback();
+      speakEntriesWithBrowser(lines, rate);
+    }
   };
 
   const handleRepeatPrompt = () => {
@@ -614,12 +698,13 @@ export default function App() {
     setReport(null);
     setSession(null);
     setView("assessment");
+    stopAssistantSpeech();
 
     try {
       await warmBackend().catch(() => undefined);
       const created = await createSession(language);
       setSession(created);
-      speakEntries([GREETING_MESSAGE, getQuestionPrompt(created.current_question)]);
+      void speakEntries([GREETING_MESSAGE, getQuestionPrompt(created.current_question)]);
       await refreshDashboard();
     } catch (requestError) {
       setError(
@@ -643,6 +728,7 @@ export default function App() {
     setError(null);
     setVisionError(null);
     setReport(null);
+    stopAssistantSpeech();
 
     try {
       const resumed = await fetchSession(resumableSessionId);
@@ -658,7 +744,7 @@ export default function App() {
       setView(resumed.status === "awaiting_exam" ? "camera" : "assessment");
 
       if (resumed.current_question) {
-        speakEntries([getQuestionPrompt(resumed.current_question)], {
+        void speakEntries([getQuestionPrompt(resumed.current_question)], {
           force: true,
         });
       }
@@ -689,6 +775,7 @@ export default function App() {
 
     const priorTranscriptLength = session.transcript.length;
     speech.stopListening();
+    stopAssistantSpeech();
     setBusy(true);
     setError(null);
 
@@ -716,7 +803,7 @@ export default function App() {
       }
 
       if (nextAiMessages.length) {
-        speakEntries(nextAiMessages);
+        void speakEntries(nextAiMessages);
       }
     } catch (requestError) {
       setError(
@@ -800,15 +887,19 @@ export default function App() {
       speech.stopListening();
       return;
     }
+    stopAssistantSpeech();
     speech.startListening();
   };
 
   const handleToggleAutoSpeak = () => {
     setAutoSpeak((current) => {
       const next = !current;
+      if (!next) {
+        stopAssistantSpeech();
+      }
       const prompt = getQuestionPrompt(session?.current_question ?? null);
       if (next && prompt) {
-        speakEntries([prompt], { force: true });
+        void speakEntries([prompt], { force: true });
       }
       return next;
     });
@@ -1102,6 +1193,9 @@ export default function App() {
                 Complete the patient interview here. After the questionnaire is
                 finished, you will move to the camera page for the airway
                 examination.
+              </p>
+              <p className="helper-text">
+                {t("Valli's spoken voice is AI-generated.")}
               </p>
             </div>
           </section>

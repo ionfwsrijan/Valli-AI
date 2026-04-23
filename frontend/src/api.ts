@@ -31,6 +31,27 @@ export function warmBackend(): Promise<{ status: string }> {
   return request<{ status: string }>('/api/health')
 }
 
+export async function fetchSpeechAudio(text: string, language: AppLanguage): Promise<Blob> {
+  const response = await fetch(`${API_BASE}/api/voice/speak`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      text,
+      language,
+      response_format: 'mp3',
+    }),
+  })
+
+  if (!response.ok) {
+    const textError = await response.text()
+    throw new Error(textError || `Request failed with ${response.status}`)
+  }
+
+  return response.blob()
+}
+
 export function submitAnswer(sessionId: string, answerText: string): Promise<SessionSnapshot> {
   return request<SessionSnapshot>(`/api/sessions/${sessionId}/answer`, {
     method: 'POST',
