@@ -29,10 +29,7 @@ def test_session_creation_and_progression() -> None:
         assert progressed_payload["current_question"]["id"] == "patient_phone_number"
         assert progressed_payload["current_question"]["text"] == "What's the patient's phone number?"
         assert progressed_payload["transcript"][-2]["message"] == "Got it, thank you."
-        assert (
-            progressed_payload["transcript"][-1]["message"]
-            == "What's the patient's phone number?\nFor this demo, use a registered 10-digit phone number."
-        )
+        assert progressed_payload["transcript"][-1]["message"] == "What's the patient's phone number?"
         assert len(progressed_payload["transcript"]) == 5
 
 
