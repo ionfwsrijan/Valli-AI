@@ -33,6 +33,7 @@ class QuestionPayload(BaseModel):
 
 class SessionCreateRequest(BaseModel):
     consent_for_ai: bool = True
+    language: str = "en"
 
 
 class AnswerRequest(BaseModel):
