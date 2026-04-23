@@ -163,7 +163,7 @@ def build_snapshot(db_session: AssessmentSession) -> SessionSnapshot:
                     prompt_parts.append(current_question.helper_text.strip())
                 if current_question.options:
                     prompt_parts.extend(option.label.strip() for option in current_question.options)
-                payload_dict["text"] = ai_question_text
+                payload_dict["text"] = render_question_text(current_question, answers)
                 payload_dict["prompt_text"] = "\n".join(part for part in prompt_parts if part)
                 break
         current_payload = QuestionPayload.model_validate(payload_dict)
