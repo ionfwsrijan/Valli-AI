@@ -242,7 +242,7 @@ def test_unknown_phone_number_keeps_same_question_and_reasks() -> None:
         assert session["answers"].get("patient_phone_number") is None
         assert (
             session["transcript"][-2]["message"]
-            == "I couldn't find that phone number in the demo patient directory. Please enter a registered 10-digit number."
+            == "You're not an existing patient in the demo directory. Please enter a registered 10-digit number."
         )
 
         session = client.post(

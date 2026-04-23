@@ -47,7 +47,7 @@ CAMERA_EXAM_PROMPT = (
     "The questionnaire is complete. Please continue to the camera airway assessment page using a frontal view and a side profile to finish the assessment."
 )
 PHONE_LOOKUP_CONFIRMATION = "I found the patient's basic details from that phone number and filled them in."
-PHONE_LOOKUP_NOT_FOUND = "I couldn't find that phone number in the demo patient directory. Please enter a registered 10-digit number."
+PHONE_LOOKUP_NOT_FOUND = "You're not an existing patient in the demo directory. Please enter a registered 10-digit number."
 
 
 def cors_allowed_origins() -> list[str]:
