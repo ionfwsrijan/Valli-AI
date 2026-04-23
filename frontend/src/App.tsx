@@ -31,9 +31,9 @@ import type {
 
 const GREETING_MESSAGE =
   "Hello! I am Valli. You may use text or voice for taking the assessment.";
-const DEFAULT_SPEECH_RATE = 1.55;
+const DEFAULT_SPEECH_RATE = 0.95;
 const MIN_SPEECH_RATE = 0.95;
-const SLOW_SPEECH_STEP = 0.2;
+const SLOW_SPEECH_STEP = 0;
 const SPEECH_PITCH = 1.02;
 const ACTIVE_SESSION_STORAGE_KEY = "valli-active-session-id";
 const DRAFT_STORAGE_PREFIX = "valli-draft";
