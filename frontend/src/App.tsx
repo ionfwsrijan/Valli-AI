@@ -36,6 +36,8 @@ const DEFAULT_SPEECH_RATE = 0.95;
 const MIN_SPEECH_RATE = 0.95;
 const SLOW_SPEECH_STEP = 0;
 const SPEECH_PITCH = 1.02;
+const SILENT_AUDIO_DATA_URL =
+  "data:audio/wav;base64,UklGRigGAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQQGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 const ACTIVE_SESSION_STORAGE_KEY = "valli-active-session-id";
 const DRAFT_STORAGE_PREFIX = "valli-draft";
 const FEMININE_VOICE_HINTS = [
@@ -558,6 +560,24 @@ export default function App() {
     }
   };
 
+  const primeAudioPlayback = async () => {
+    try {
+      const audio = audioRef.current ?? new Audio();
+      audioRef.current = audio;
+      audio.setAttribute("playsinline", "true");
+      audio.preload = "auto";
+      audio.muted = true;
+      audio.src = SILENT_AUDIO_DATA_URL;
+      await audio.play();
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = false;
+      audio.src = "";
+    } catch {
+      // Ignore priming failures; the normal audio/fallback path still runs.
+    }
+  };
+
   const stopAssistantSpeech = () => {
     speechRequestIdRef.current += 1;
     if ("speechSynthesis" in window) {
@@ -651,7 +671,8 @@ export default function App() {
       return;
     }
 
-    speakEntries(["I'll say that again.", currentPromptForSpeech], {
+    void primeAudioPlayback();
+    void speakEntries(["I'll say that again.", currentPromptForSpeech], {
       force: true,
     });
   };
@@ -667,7 +688,8 @@ export default function App() {
       return;
     }
 
-    speakEntries(["Let me say that more simply.", rephrasedPrompt], {
+    void primeAudioPlayback();
+    void speakEntries(["Let me say that more simply.", rephrasedPrompt], {
       force: true,
     });
   };
@@ -683,7 +705,8 @@ export default function App() {
     );
 
     setSpeechRate(nextRate);
-    speakEntries(["Sure, I'll slow down.", currentPromptForSpeech], {
+    void primeAudioPlayback();
+    void speakEntries(["Sure, I'll slow down.", currentPromptForSpeech], {
       force: true,
       rate: nextRate,
     });
@@ -699,6 +722,7 @@ export default function App() {
     setSession(null);
     setView("assessment");
     stopAssistantSpeech();
+    await primeAudioPlayback();
 
     try {
       await warmBackend().catch(() => undefined);
@@ -729,6 +753,7 @@ export default function App() {
     setVisionError(null);
     setReport(null);
     stopAssistantSpeech();
+    await primeAudioPlayback();
 
     try {
       const resumed = await fetchSession(resumableSessionId);
