@@ -617,7 +617,7 @@ export default function App() {
 
     try {
       await warmBackend().catch(() => undefined);
-      const created = await createSession();
+      const created = await createSession(language);
       setSession(created);
       speakEntries([GREETING_MESSAGE, getQuestionPrompt(created.current_question)]);
       await refreshDashboard();

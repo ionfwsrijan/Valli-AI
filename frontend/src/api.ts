@@ -1,3 +1,4 @@
+import type { AppLanguage } from './localization'
 import type { DashboardItem, SessionReport, SessionSnapshot } from './types'
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ?? ''
@@ -19,10 +20,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export function createSession(): Promise<SessionSnapshot> {
+export function createSession(language: AppLanguage = 'en'): Promise<SessionSnapshot> {
   return request<SessionSnapshot>('/api/sessions', {
     method: 'POST',
-    body: JSON.stringify({ consent_for_ai: true }),
+    body: JSON.stringify({ consent_for_ai: true, language }),
   })
 }
 
