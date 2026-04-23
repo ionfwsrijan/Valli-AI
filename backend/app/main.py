@@ -13,6 +13,7 @@ from sqlmodel import Session, select
 
 from .conversation_router import classify_input
 from .database import create_db_and_tables, get_session
+from .llm_service import generate_empathetic_question
 from .models import AssessmentSession
 from .patient_directory import patient_record_for_phone
 from .policy_rag import retrieve_policy_answer, should_hide_policy_sources
@@ -24,6 +25,7 @@ from .questionnaire import (
     is_question_complete,
     next_question,
     question_to_payload,
+    render_question_text,
     visible_questions,
 )
 from .risk_engine import compute_risk_profile
@@ -48,6 +50,15 @@ CAMERA_EXAM_PROMPT = (
 )
 PHONE_LOOKUP_CONFIRMATION = "I found the patient's basic details from that phone number and filled them in."
 PHONE_LOOKUP_NOT_FOUND = "You're not an existing patient in the demo directory. Please enter a registered 10-digit number."
+
+LANGUAGE_NAME_MAP = {
+    "en": "English",
+    "ta": "Tamil",
+    "hi": "Hindi",
+    "te": "Telugu",
+    "ml": "Malayalam",
+    "kn": "Kannada",
+}
 
 
 def cors_allowed_origins() -> list[str]:
@@ -135,9 +146,27 @@ def normalize_transcript_entries(entries: list[dict[str, Any]]) -> list[dict[str
 
 def build_snapshot(db_session: AssessmentSession) -> SessionSnapshot:
     answers = decode_answers(db_session)
-    transcript_raw = normalize_transcript_entries(decode_transcript(db_session))
+    transcript_entries = decode_transcript(db_session)
+    transcript_raw = normalize_transcript_entries(transcript_entries)
     risk = decode_risk(db_session)
     current_question = QUESTION_MAP.get(db_session.current_question_id) if db_session.current_question_id else None
+    current_payload = None
+
+    if current_question:
+        payload_dict = question_to_payload(current_question, answers)
+        for entry in reversed(transcript_entries):
+            if entry.get("speaker") == "ai" and entry.get("question_id") == current_question.id:
+                ai_question_text = entry.get("message")
+                prompt_parts = [ai_question_text]
+                if current_question.helper_text:
+                    prompt_parts.append(current_question.helper_text.strip())
+                if current_question.options:
+                    prompt_parts.extend(option.label.strip() for option in current_question.options)
+                payload_dict["text"] = ai_question_text
+                payload_dict["prompt_text"] = "\n".join(part for part in prompt_parts if part)
+                break
+        current_payload = QuestionPayload.model_validate(payload_dict)
+
     visible = visible_questions(answers)
     answered_ids = {key for key in answers.keys() if key in QUESTION_MAP}
     completed = len([question for question in visible if question.id in answered_ids])
@@ -145,7 +174,7 @@ def build_snapshot(db_session: AssessmentSession) -> SessionSnapshot:
     return SessionSnapshot(
         session_id=db_session.id,
         status=db_session.status,
-        current_question=QuestionPayload.model_validate(question_to_payload(current_question, answers)) if current_question else None,
+        current_question=current_payload,
         progress_completed=completed,
         progress_total=max(len(visible), completed),
         transcript=[TranscriptEntry.model_validate(entry) for entry in transcript_raw],
@@ -201,12 +230,19 @@ def health() -> dict[str, str]:
 
 
 @app.post("/api/sessions", response_model=SessionSnapshot)
-def create_assessment(payload: SessionCreateRequest, db: Session = Depends(get_session)) -> SessionSnapshot:
-    answers: dict[str, Any] = {"consent_for_ai": payload.consent_for_ai}
+async def create_assessment(payload: SessionCreateRequest, db: Session = Depends(get_session)) -> SessionSnapshot:
+    language_code = (payload.language or "en").strip().lower()
+    full_language = LANGUAGE_NAME_MAP.get(language_code, "English")
+    answers: dict[str, Any] = {
+        "consent_for_ai": payload.consent_for_ai,
+        "language": full_language,
+    }
     first = next_question(None, answers)
     transcript: list[dict[str, Any]] = [transcript_entry("ai", BOT_GREETING)]
     if first is not None:
-        transcript.append(transcript_entry("ai", format_question_prompt(first, answers), first.id))
+        base_prompt = render_question_text(first, answers)
+        natural_prompt = await generate_empathetic_question("", base_prompt, language=full_language)
+        transcript.append(transcript_entry("ai", natural_prompt, first.id))
 
     assessment = AssessmentSession(
         current_question_id=first.id if first else None,
@@ -251,7 +287,7 @@ def get_assessment(session_id: str, db: Session = Depends(get_session)) -> Sessi
 
 
 @app.post("/api/sessions/{session_id}/answer", response_model=SessionSnapshot)
-def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends(get_session)) -> SessionSnapshot:
+async def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends(get_session)) -> SessionSnapshot:
     assessment = get_assessment_or_404(session_id, db)
     if assessment.status == "completed":
         raise HTTPException(status_code=400, detail="Assessment is already completed.")
@@ -260,6 +296,7 @@ def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends
 
     current = QUESTION_MAP[assessment.current_question_id]
     answers = decode_answers(assessment)
+    current_language = str(answers.get("language") or "English")
     transcript = normalize_transcript_entries(decode_transcript(assessment))
 
     transcript.append(transcript_entry("patient", payload.answer_text, current.id))
@@ -298,7 +335,13 @@ def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends
             )
             if correction:
                 transcript.append(transcript_entry("ai", correction, current.id))
-            transcript.append(transcript_entry("ai", format_question_prompt(current, answers)))
+            base_prompt = render_question_text(current, answers)
+            natural_prompt = await generate_empathetic_question(
+                payload.answer_text,
+                base_prompt,
+                language=current_language,
+            )
+            transcript.append(transcript_entry("ai", natural_prompt, current.id))
             assessment.current_question_id = current.id
             assessment.status = "in_progress"
         else:
@@ -306,7 +349,13 @@ def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends
                 transcript.append(transcript_entry("ai", answer_confirmation))
             upcoming = next_question(current.id, answers)
             if upcoming is not None:
-                transcript.append(transcript_entry("ai", format_question_prompt(upcoming, answers), upcoming.id))
+                base_prompt = render_question_text(upcoming, answers)
+                natural_prompt = await generate_empathetic_question(
+                    payload.answer_text,
+                    base_prompt,
+                    language=current_language,
+                )
+                transcript.append(transcript_entry("ai", natural_prompt, upcoming.id))
                 assessment.current_question_id = upcoming.id
                 assessment.status = "in_progress"
             else:
@@ -314,7 +363,13 @@ def submit_answer(session_id: str, payload: AnswerRequest, db: Session = Depends
                 assessment.current_question_id = None
                 assessment.status = "awaiting_exam"
     else:
-        transcript.append(transcript_entry("ai", format_question_prompt(current, answers), current.id))
+        base_prompt = render_question_text(current, answers)
+        natural_prompt = await generate_empathetic_question(
+            payload.answer_text,
+            base_prompt,
+            language=current_language,
+        )
+        transcript.append(transcript_entry("ai", natural_prompt, current.id))
         assessment.current_question_id = current.id
         assessment.status = "in_progress"
 
