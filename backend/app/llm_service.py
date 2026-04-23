@@ -10,17 +10,26 @@ except ImportError:  # pragma: no cover - optional dependency fallback
 
 
 try:
-    from openai import AsyncOpenAI
+    from openai import AsyncOpenAI, OpenAI
 except ImportError:  # pragma: no cover - optional dependency fallback
     AsyncOpenAI = None  # type: ignore[assignment]
+    OpenAI = None  # type: ignore[assignment]
 
 
 load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_VALLI_MODEL = os.getenv("OPENAI_VALLI_MODEL", "gpt-4o-mini").strip() or "gpt-4o-mini"
+OPENAI_VALLI_TTS_MODEL = os.getenv("OPENAI_VALLI_TTS_MODEL", "gpt-4o-mini-tts").strip() or "gpt-4o-mini-tts"
+OPENAI_VALLI_TTS_VOICE = os.getenv("OPENAI_VALLI_TTS_VOICE", "coral").strip() or "coral"
+
+try:
+    OPENAI_VALLI_TTS_SPEED = max(0.25, min(4.0, float(os.getenv("OPENAI_VALLI_TTS_SPEED", "0.95"))))
+except ValueError:
+    OPENAI_VALLI_TTS_SPEED = 0.95
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY) if AsyncOpenAI and OPENAI_API_KEY else None
+sync_client = OpenAI(api_key=OPENAI_API_KEY) if OpenAI and OPENAI_API_KEY else None
 
 
 async def generate_empathetic_question(
@@ -67,3 +76,53 @@ async def generate_empathetic_question(
         return generated or next_core_question
     except Exception:
         return next_core_question
+
+
+def speech_media_type(response_format: str) -> str:
+    if response_format == "wav":
+        return "audio/wav"
+    if response_format == "aac":
+        return "audio/aac"
+    if response_format == "flac":
+        return "audio/flac"
+    if response_format == "opus":
+        return "audio/ogg"
+    if response_format == "pcm":
+        return "audio/L16"
+    return "audio/mpeg"
+
+
+def voice_instructions(language: str) -> str:
+    return (
+        f"Speak naturally in {language} with a calm, warm, professional feminine voice suitable for a pre-operative "
+        "assessment. Keep the pacing clear and natural, and sound reassuring rather than robotic."
+    )
+
+
+def synthesize_speech_audio(
+    text: str,
+    *,
+    language: str = "English",
+    response_format: str = "mp3",
+) -> bytes:
+    if sync_client is None:
+        raise RuntimeError("OpenAI voice is not configured on the server.")
+
+    normalized_text = " ".join(text.split()).strip()
+    if not normalized_text:
+        raise RuntimeError("No text was provided for speech synthesis.")
+
+    safe_text = normalized_text[:4000]
+
+    try:
+        response = sync_client.audio.speech.create(
+            model=OPENAI_VALLI_TTS_MODEL,
+            voice=OPENAI_VALLI_TTS_VOICE,
+            input=safe_text,
+            instructions=voice_instructions(language),
+            response_format=response_format,
+            speed=OPENAI_VALLI_TTS_SPEED,
+        )
+        return response.content
+    except Exception as exc:  # pragma: no cover - network/API failure
+        raise RuntimeError(str(exc)) from exc

@@ -40,6 +40,12 @@ class AnswerRequest(BaseModel):
     answer_text: str = Field(min_length=1)
 
 
+class VoiceSynthesisRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=4000)
+    language: str = "en"
+    response_format: Literal["mp3", "wav"] = "mp3"
+
+
 class VisionAirwayCaptureRequest(BaseModel):
     capture_type: Literal["frontal", "profile"] = "frontal"
     image_data_url: str = Field(min_length=32)

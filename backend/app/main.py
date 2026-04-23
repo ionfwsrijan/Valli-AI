@@ -6,14 +6,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlmodel import Session, select
 
 from .conversation_router import classify_input
 from .database import create_db_and_tables, get_session
-from .llm_service import generate_empathetic_question
+from .llm_service import generate_empathetic_question, speech_media_type, synthesize_speech_audio
 from .models import AssessmentSession
 from .patient_directory import patient_record_for_phone
 from .policy_rag import retrieve_policy_answer, should_hide_policy_sources
@@ -37,6 +37,7 @@ from .schemas import (
     SessionReport,
     SessionSnapshot,
     TranscriptEntry,
+    VoiceSynthesisRequest,
     VisionAirwayCaptureRequest,
 )
 from .runtime_paths import packaged_frontend_dir
@@ -227,6 +228,26 @@ def get_assessment_or_404(session_id: str, db: Session) -> AssessmentSession:
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/api/voice/speak")
+def speak_text(payload: VoiceSynthesisRequest) -> Response:
+    language_code = (payload.language or "en").strip().lower()
+    full_language = LANGUAGE_NAME_MAP.get(language_code, "English")
+    try:
+        audio_bytes = synthesize_speech_audio(
+            payload.text,
+            language=full_language,
+            response_format=payload.response_format,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    return Response(
+        content=audio_bytes,
+        media_type=speech_media_type(payload.response_format),
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @app.post("/api/sessions", response_model=SessionSnapshot)
