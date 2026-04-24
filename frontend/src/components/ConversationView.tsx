@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { LocalizedQuestion } from '../localization'
 import type { SessionSnapshot } from '../types'
@@ -79,6 +79,10 @@ function MicGlyph({ active }: { active: boolean }) {
   )
 }
 
+function normalizeSentenceCase(message: string) {
+  return message.replace(/^(\s*)([a-z])/, (_, spacing: string, letter: string) => `${spacing}${letter.toUpperCase()}`)
+}
+
 export function ConversationView({
   busy,
   draftAnswer,
@@ -105,6 +109,7 @@ export function ConversationView({
   translateAiMessage,
 }: ConversationViewProps) {
   const [showWhyHelper, setShowWhyHelper] = useState(false)
+  const transcriptRef = useRef<HTMLDivElement | null>(null)
   const progress = session ? `${session.progress_completed}/${session.progress_total}` : '0/0'
   const isComplete = session?.status === 'completed'
   const currentQuestion = session?.current_question
@@ -116,6 +121,15 @@ export function ConversationView({
   useEffect(() => {
     setShowWhyHelper(false)
   }, [currentQuestion?.id])
+
+  useEffect(() => {
+    const container = transcriptRef.current
+    if (!container) {
+      return
+    }
+
+    container.scrollTop = container.scrollHeight
+  }, [session?.transcript.length])
 
   return (
     <section className="panel panel-conversation">
@@ -168,11 +182,11 @@ export function ConversationView({
             <span className="badge soft">Progress {progress}</span>
           </div>
 
-          <div className="transcript-shell">
+          <div className="transcript-shell" ref={transcriptRef}>
             {session.transcript.map((entry, index) => (
               <article className={`bubble ${entry.speaker}`} key={`${entry.timestamp}-${index}`}>
                 <span className="bubble-speaker">{entry.speaker === 'ai' ? translateAiMessage('Doctor') : translateAiMessage('Patient')}</span>
-                <p>{entry.speaker === 'ai' ? translateAiMessage(entry.message) : entry.message}</p>
+                <p>{normalizeSentenceCase(entry.speaker === 'ai' ? translateAiMessage(entry.message) : entry.message)}</p>
               </article>
             ))}
           </div>

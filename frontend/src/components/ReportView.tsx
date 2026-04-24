@@ -38,6 +38,10 @@ function formatTimestamp(value: string) {
   })
 }
 
+function normalizeSentenceCase(message: string) {
+  return message.replace(/^(\s*)([a-z])/, (_, spacing: string, letter: string) => `${spacing}${letter.toUpperCase()}`)
+}
+
 function initialsFromName(value: unknown) {
   const text = displayValue(value)
   if (text === 'Not provided') {
@@ -279,7 +283,7 @@ export function ReportView({ report, onPrintReport, onPrintTranscript }: ReportV
                 {report.transcript.map((entry, index) => (
                   <article className={`report-turn ${entry.speaker}`} key={`${entry.timestamp}-${index}`}>
                     <span className="report-turn-speaker">{entry.speaker === 'ai' ? 'Doctor' : 'Patient'}</span>
-                    <p>{entry.message}</p>
+                    <p>{normalizeSentenceCase(entry.message)}</p>
                   </article>
                 ))}
               </div>
