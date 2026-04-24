@@ -171,7 +171,7 @@ export function ConversationView({
           <div className="transcript-shell">
             {session.transcript.map((entry, index) => (
               <article className={`bubble ${entry.speaker}`} key={`${entry.timestamp}-${index}`}>
-                <span className="bubble-speaker">{entry.speaker === 'ai' ? 'Valli' : 'Patient'}</span>
+                <span className="bubble-speaker">{entry.speaker === 'ai' ? translateAiMessage('Doctor') : translateAiMessage('Patient')}</span>
                 <p>{entry.speaker === 'ai' ? translateAiMessage(entry.message) : entry.message}</p>
               </article>
             ))}

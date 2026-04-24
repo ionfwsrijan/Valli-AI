@@ -278,7 +278,7 @@ export function ReportView({ report, onPrintReport, onPrintTranscript }: ReportV
               <div className="report-transcript">
                 {report.transcript.map((entry, index) => (
                   <article className={`report-turn ${entry.speaker}`} key={`${entry.timestamp}-${index}`}>
-                    <span className="report-turn-speaker">{entry.speaker === 'ai' ? 'Valli' : 'Patient'}</span>
+                    <span className="report-turn-speaker">{entry.speaker === 'ai' ? 'Doctor' : 'Patient'}</span>
                     <p>{entry.message}</p>
                   </article>
                 ))}
