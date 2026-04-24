@@ -16,7 +16,7 @@ def test_session_creation_and_progression() -> None:
         assert payload["current_question"]["id"] == "history_source"
         assert payload["current_question"]["prompt_text"] == "Who is taking the assessment?\nPatient\nRelative/Guardian\nMedical Records"
         assert payload["transcript"][0]["speaker"] == "ai"
-        assert payload["transcript"][0]["message"] == "Hello! I am Valli. You may use text or voice for taking the assessment."
+        assert payload["transcript"][0]["message"] == "Hello! I am the doctor guiding this assessment. You may use text or voice for taking the assessment."
         assert payload["transcript"][1]["message"] == "Who is taking the assessment?\nPatient\nRelative/Guardian\nMedical Records"
 
         progressed = client.post(
@@ -61,6 +61,29 @@ def test_history_source_medical_records_keeps_patient_referenced_identity_questi
         assert progressed["answers"]["history_source"] == "medical_records"
         assert progressed["current_question"]["id"] == "patient_phone_number"
         assert progressed["current_question"]["text"] == "What's the patient's phone number?"
+
+
+def test_mid_assessment_language_change_updates_session_language_without_skipping() -> None:
+    with TestClient(app) as client:
+        session = client.post("/api/sessions", json={"consent_for_ai": True, "language": "en"}).json()
+        session_id = session["session_id"]
+
+        session = client.post(
+            f"/api/sessions/{session_id}/answer",
+            json={"answer_text": "Patient"},
+        ).json()
+
+        updated = client.post(
+            f"/api/sessions/{session_id}/language",
+            json={"language": "ta"},
+        )
+        assert updated.status_code == 200
+
+        payload = updated.json()
+        assert payload["answers"]["language"] == "Tamil"
+        assert payload["current_question"]["id"] == "patient_phone_number"
+        assert payload["current_question"]["prompt_text"] == "What is your phone number?\nFor this demo, use a registered 10-digit phone number."
+        assert payload["transcript"][-1]["message"] == "What is your phone number?\nFor this demo, use a registered 10-digit phone number."
 
 
 def test_questionnaire_defers_airway_exam_to_camera_stage() -> None:
