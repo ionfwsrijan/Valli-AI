@@ -32,6 +32,10 @@ client = AsyncOpenAI(api_key=OPENAI_API_KEY) if AsyncOpenAI and OPENAI_API_KEY e
 sync_client = OpenAI(api_key=OPENAI_API_KEY) if OpenAI and OPENAI_API_KEY else None
 
 
+def is_openai_voice_configured() -> bool:
+    return sync_client is not None
+
+
 async def generate_empathetic_question(
     previous_patient_answer: str,
     next_core_question: str,

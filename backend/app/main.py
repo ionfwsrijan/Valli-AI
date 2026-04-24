@@ -13,7 +13,12 @@ from sqlmodel import Session, select
 
 from .conversation_router import classify_input
 from .database import create_db_and_tables, get_session
-from .llm_service import generate_empathetic_question, speech_media_type, synthesize_speech_audio
+from .llm_service import (
+    generate_empathetic_question,
+    is_openai_voice_configured,
+    speech_media_type,
+    synthesize_speech_audio,
+)
 from .models import AssessmentSession
 from .patient_directory import patient_record_for_phone
 from .policy_rag import retrieve_policy_answer, should_hide_policy_sources
@@ -251,6 +256,16 @@ def refresh_current_question_prompt(
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/voice/status")
+def voice_status() -> dict[str, str | bool]:
+    configured = is_openai_voice_configured()
+    return {
+        "status": "connected" if configured else "unavailable",
+        "configured": configured,
+        "detail": "OpenAI voice is ready." if configured else "OpenAI voice is not configured on the server.",
+    }
 
 
 @app.post("/api/voice/speak")
