@@ -37,6 +37,7 @@ const DEFAULT_SPEECH_RATE = 0.95;
 const MIN_SPEECH_RATE = 0.95;
 const SLOW_SPEECH_STEP = 0;
 const SPEECH_PITCH = 1.02;
+const OPENAI_TTS_TIMEOUT_MS = 1600;
 const SILENT_AUDIO_DATA_URL =
   "data:audio/wav;base64,UklGRigGAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQQGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 const LANGUAGE_STORAGE_KEY = "doctor-language";
@@ -666,7 +667,12 @@ export default function App() {
     clearAudioPlayback();
 
     try {
-      const audioBlob = await fetchSpeechAudio(lines.join("\n\n"), languageOverride);
+      const audioBlob = await Promise.race([
+        fetchSpeechAudio(lines.join("\n\n"), languageOverride),
+        new Promise<never>((_, reject) => {
+          window.setTimeout(() => reject(new Error("tts_timeout")), OPENAI_TTS_TIMEOUT_MS);
+        }),
+      ]);
       if (speechRequestIdRef.current !== requestId) {
         return;
       }
@@ -674,9 +680,17 @@ export default function App() {
       const objectUrl = URL.createObjectURL(audioBlob);
       const audio = audioRef.current ?? new Audio();
       audioRef.current = audio;
+      audio.setAttribute("playsinline", "true");
+      audio.preload = "auto";
       audioUrlRef.current = objectUrl;
       audio.src = objectUrl;
       audio.onended = () => {
+        if (audioUrlRef.current === objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+          audioUrlRef.current = null;
+        }
+      };
+      audio.onerror = () => {
         if (audioUrlRef.current === objectUrl) {
           URL.revokeObjectURL(objectUrl);
           audioUrlRef.current = null;
@@ -698,10 +712,12 @@ export default function App() {
       return;
     }
 
-    void primeAudioPlayback();
-    void speakEntries(["I'll say that again.", currentPromptForSpeech], {
-      force: true,
-    });
+    void (async () => {
+      await primeAudioPlayback();
+      await speakEntries(["I'll say that again.", currentPromptForSpeech], {
+        force: true,
+      });
+    })();
   };
 
   const handleLanguageChange = async (nextLanguage: AppLanguage) => {
@@ -759,10 +775,12 @@ export default function App() {
       return;
     }
 
-    void primeAudioPlayback();
-    void speakEntries(["Let me say that more simply.", rephrasedPrompt], {
-      force: true,
-    });
+    void (async () => {
+      await primeAudioPlayback();
+      await speakEntries(["Let me say that more simply.", rephrasedPrompt], {
+        force: true,
+      });
+    })();
   };
 
   const handleSlowDownPrompt = () => {
@@ -776,11 +794,13 @@ export default function App() {
     );
 
     setSpeechRate(nextRate);
-    void primeAudioPlayback();
-    void speakEntries(["Sure, I'll slow down.", currentPromptForSpeech], {
-      force: true,
-      rate: nextRate,
-    });
+    void (async () => {
+      await primeAudioPlayback();
+      await speakEntries(["Sure, I'll slow down.", currentPromptForSpeech], {
+        force: true,
+        rate: nextRate,
+      });
+    })();
   };
 
   const startAssessment = async () => {
@@ -794,12 +814,19 @@ export default function App() {
     setView("assessment");
     stopAssistantSpeech();
     await primeAudioPlayback();
+    void speakEntries([GREETING_MESSAGE], {
+      force: true,
+      languageOverride: language,
+    });
 
     try {
       await warmBackend().catch(() => undefined);
       const created = await createSession(language);
       setSession(created);
-      void speakEntries([GREETING_MESSAGE, getQuestionPrompt(created.current_question)]);
+      void speakEntries([getQuestionPrompt(created.current_question)], {
+        force: true,
+        languageOverride: language,
+      });
       await refreshDashboard();
     } catch (requestError) {
       setError(
@@ -1019,9 +1046,7 @@ export default function App() {
     <main className="app-shell">
       <section className="toolbar">
         <div className="mobile-toolbar">
-          <div className="mobile-brand-block">
-            <strong className="mobile-brand-title">{t("Doctor")}</strong>
-          </div>
+          <div aria-hidden="true" className="mobile-brand-spacer" />
           <button
             aria-expanded={mobileMenuOpen}
             aria-label="Open navigation menu"
