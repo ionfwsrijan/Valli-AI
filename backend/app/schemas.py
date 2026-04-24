@@ -36,6 +36,10 @@ class SessionCreateRequest(BaseModel):
     language: str = "en"
 
 
+class SessionLanguageUpdateRequest(BaseModel):
+    language: str = "en"
+
+
 class AnswerRequest(BaseModel):
     answer_text: str = Field(min_length=1)
 

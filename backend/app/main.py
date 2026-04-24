@@ -34,6 +34,7 @@ from .schemas import (
     DashboardItem,
     QuestionPayload,
     SessionCreateRequest,
+    SessionLanguageUpdateRequest,
     SessionReport,
     SessionSnapshot,
     TranscriptEntry,
@@ -44,7 +45,7 @@ from .runtime_paths import packaged_frontend_dir
 from .vision_airway import analyze_airway_photo, has_required_exam_captures
 
 
-BOT_GREETING = "Hello! I am Valli. You may use text or voice for taking the assessment."
+BOT_GREETING = "Hello! I am the doctor guiding this assessment. You may use text or voice for taking the assessment."
 ANSWER_CONFIRMATION = "Got it, thank you."
 CAMERA_EXAM_PROMPT = (
     "The questionnaire is complete. Please continue to the camera airway assessment page using a frontal view and a side profile to finish the assessment."
@@ -134,6 +135,9 @@ def transcript_entry(speaker: str, message: str, question_id: str | None = None)
 def normalize_transcript_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
     normalized: list[dict[str, Any]] = []
     for entry in entries:
+        if entry.get("speaker") == "ai" and entry.get("message") == "Hello! I am Valli. You may use text or voice for taking the assessment.":
+            normalized.append({**entry, "message": BOT_GREETING})
+            continue
         if entry.get("speaker") == "ai":
             question_id = entry.get("question_id")
             if isinstance(question_id, str) and question_id in QUESTION_MAP:
@@ -225,6 +229,25 @@ def get_assessment_or_404(session_id: str, db: Session) -> AssessmentSession:
     return assessment
 
 
+def normalized_language_name(language_value: str) -> str:
+    return LANGUAGE_NAME_MAP.get(language_value.strip().lower(), language_value.strip() or "English")
+
+
+def refresh_current_question_prompt(
+    transcript: list[dict[str, Any]],
+    *,
+    question_id: str,
+    message: str,
+) -> None:
+    for index in range(len(transcript) - 1, -1, -1):
+        entry = transcript[index]
+        if entry.get("speaker") == "ai" and entry.get("question_id") == question_id:
+            transcript[index] = {**entry, "message": message}
+            return
+
+    transcript.append(transcript_entry("ai", message, question_id))
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -252,8 +275,7 @@ def speak_text(payload: VoiceSynthesisRequest) -> Response:
 
 @app.post("/api/sessions", response_model=SessionSnapshot)
 async def create_assessment(payload: SessionCreateRequest, db: Session = Depends(get_session)) -> SessionSnapshot:
-    language_code = (payload.language or "en").strip().lower()
-    full_language = LANGUAGE_NAME_MAP.get(language_code, "English")
+    full_language = normalized_language_name(payload.language or "en")
     answers: dict[str, Any] = {
         "consent_for_ai": payload.consent_for_ai,
         "language": full_language,
@@ -272,6 +294,34 @@ async def create_assessment(payload: SessionCreateRequest, db: Session = Depends
         risk_json=json.dumps(compute_risk_profile(answers)),
         status="in_progress" if first else "completed",
     )
+    db.add(assessment)
+    db.commit()
+    db.refresh(assessment)
+    return build_snapshot(assessment)
+
+
+@app.post("/api/sessions/{session_id}/language", response_model=SessionSnapshot)
+def update_assessment_language(
+    session_id: str,
+    payload: SessionLanguageUpdateRequest,
+    db: Session = Depends(get_session),
+) -> SessionSnapshot:
+    assessment = get_assessment_or_404(session_id, db)
+    answers = decode_answers(assessment)
+    transcript = normalize_transcript_entries(decode_transcript(assessment))
+
+    answers["language"] = normalized_language_name(payload.language)
+
+    if assessment.current_question_id:
+        current = QUESTION_MAP[assessment.current_question_id]
+        refresh_current_question_prompt(
+            transcript,
+            question_id=current.id,
+            message=render_question_text(current, answers),
+        )
+    risk = compute_risk_profile(answers)
+
+    encode_and_store(assessment, answers=answers, transcript=transcript, risk=risk)
     db.add(assessment)
     db.commit()
     db.refresh(assessment)
@@ -317,7 +367,7 @@ async def submit_answer(session_id: str, payload: AnswerRequest, db: Session = D
 
     current = QUESTION_MAP[assessment.current_question_id]
     answers = decode_answers(assessment)
-    current_language = str(answers.get("language") or "English")
+    current_language = normalized_language_name(str(answers.get("language") or "English"))
     transcript = normalize_transcript_entries(decode_transcript(assessment))
 
     transcript.append(transcript_entry("patient", payload.answer_text, current.id))
