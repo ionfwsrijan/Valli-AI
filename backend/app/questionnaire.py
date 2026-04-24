@@ -93,11 +93,16 @@ SKIP_VALUES = {
 }
 
 COMPOUND_QUESTION_FIELDS: dict[str, tuple[str, ...]] = {
+    "previous_surgery_when": ("previous_surgery_month", "previous_surgery_year"),
     "smoking_details": ("smoking_years", "smoking_packs_per_day", "smoking_last_puff"),
     "alcohol_details": ("alcohol_years", "alcohol_last_drink"),
 }
 
 COMPOUND_QUESTION_LABELS: dict[str, dict[str, str]] = {
+    "previous_surgery_when": {
+        "previous_surgery_month": "the month",
+        "previous_surgery_year": "the year",
+    },
     "smoking_details": {
         "smoking_years": "the number of years of this habit",
         "smoking_packs_per_day": "packs per day",
@@ -121,6 +126,36 @@ TIME_REFERENCE_PATTERNS = (
     r"\blast month\b",
     r"\b\d+(?:\.\d+)?\s*(?:minute|minutes|hour|hours|day|days|week|weeks|month|months|year|years)\s+ago\b",
 )
+
+MONTH_NAME_BY_NUMBER = {
+    "1": "January",
+    "2": "February",
+    "3": "March",
+    "4": "April",
+    "5": "May",
+    "6": "June",
+    "7": "July",
+    "8": "August",
+    "9": "September",
+    "10": "October",
+    "11": "November",
+    "12": "December",
+}
+
+MONTH_PATTERNS = {
+    "January": r"\b(?:jan(?:uary)?)\b",
+    "February": r"\b(?:feb(?:ruary)?)\b",
+    "March": r"\b(?:mar(?:ch)?)\b",
+    "April": r"\b(?:apr(?:il)?)\b",
+    "May": r"\bmay\b",
+    "June": r"\b(?:jun(?:e)?)\b",
+    "July": r"\b(?:jul(?:y)?)\b",
+    "August": r"\b(?:aug(?:ust)?)\b",
+    "September": r"\b(?:sep(?:t(?:ember)?)?)\b",
+    "October": r"\b(?:oct(?:ober)?)\b",
+    "November": r"\b(?:nov(?:ember)?)\b",
+    "December": r"\b(?:dec(?:ember)?)\b",
+}
 
 
 def merge_depends_on(*parts: dict[str, Any]) -> dict[str, Any]:
@@ -238,23 +273,9 @@ PREVIOUS_HISTORY_QUESTIONS = [
     Question(
         "previous_surgery_when",
         "previous_surgery_when",
-        "Could you please mention when it was done?",
+        "Could you please mention the month and year when it was done?",
         "Previous Surgery",
-        depends_on={"previous_surgery": True},
-    ),
-    Question(
-        "previous_surgery_year",
-        "previous_surgery_year",
-        "Could you please mention the year?",
-        "Previous Surgery",
-        "integer",
-        depends_on={"previous_surgery": True},
-    ),
-    Question(
-        "previous_surgery_month",
-        "previous_surgery_month",
-        "Could you please mention the month?",
-        "Previous Surgery",
+        helper_text="For example: March 2020.",
         depends_on={"previous_surgery": True},
     ),
     Question(
@@ -701,6 +722,10 @@ def join_missing_labels(labels: list[str]) -> str:
 def compound_followup_text(question_id: str, answers: dict[str, Any]) -> str:
     missing = missing_compound_fields(question_id, answers)
     labels = [COMPOUND_QUESTION_LABELS[question_id][field] for field in missing]
+    if question_id == "previous_surgery_when":
+        if missing:
+            return f"Thank you. I still need {join_missing_labels(labels)}."
+        return "Could you please mention the month and year when it was done?"
     if question_id == "smoking_details":
         if missing:
             return f"Thank you. I still need {join_missing_labels(labels)}."
@@ -736,6 +761,24 @@ def body_metrics_followup_text(answers: dict[str, Any] | None = None) -> str:
 def extract_years_value(raw_answer: str) -> float | None:
     match = re.search(r"(\d+(?:\.\d+)?)\s*(?:years?|yrs?)\b", raw_answer)
     return round(float(match.group(1)), 2) if match else None
+
+
+def extract_month_value(raw_answer: str) -> str | None:
+    lowered = raw_answer.strip().lower()
+    for month_name, pattern in MONTH_PATTERNS.items():
+        if re.search(pattern, lowered):
+            return month_name
+
+    number_match = re.search(r"\b(0?[1-9]|1[0-2])\b", lowered)
+    if number_match:
+        return MONTH_NAME_BY_NUMBER.get(str(int(number_match.group(1))))
+
+    return None
+
+
+def extract_year_value(raw_answer: str) -> int | None:
+    match = re.search(r"\b(19\d{2}|20\d{2}|2100)\b", raw_answer)
+    return int(match.group(1)) if match else None
 
 
 def extract_packs_per_day_value(raw_answer: str) -> float | None:
@@ -774,6 +817,17 @@ def parse_compound_question(question: Question, raw_answer: str, answers: dict[s
     active_answers = answers or {}
     lowered = raw_answer.strip().lower()
     parsed: dict[str, Any] = {}
+
+    if question.id == "previous_surgery_when":
+        year_value = extract_year_value(lowered)
+        month_value = extract_month_value(lowered)
+
+        if year_value is not None:
+            parsed["previous_surgery_year"] = year_value
+        if month_value is not None:
+            parsed["previous_surgery_month"] = month_value
+
+        return parsed
 
     if question.id == "smoking_details":
         years = extract_years_value(lowered)
@@ -816,6 +870,8 @@ def parse_compound_question(question: Question, raw_answer: str, answers: dict[s
 
 
 def compound_answer_summary(question_id: str, answers: dict[str, Any]) -> str:
+    if question_id == "previous_surgery_when":
+        return f"{answers['previous_surgery_month']} {answers['previous_surgery_year']}"
     if question_id == "smoking_details":
         return (
             f"{display_number(answers['smoking_years'])} years, "

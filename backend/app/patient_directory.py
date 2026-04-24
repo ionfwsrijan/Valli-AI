@@ -57,7 +57,7 @@ def mongo_enabled() -> bool:
 
 
 @lru_cache(maxsize=1)
-def mongo_collection() -> Collection | None:
+def mongo_collection() -> Collection | None: # type: ignore
     uri = os.getenv("MONGODB_URI", "").strip()
     if not uri or MongoClient is None:
         return None
