@@ -93,6 +93,9 @@ def test_questionnaire_defers_airway_exam_to_camera_stage() -> None:
     assert "patient_age" not in QUESTION_MAP
     assert "patient_sex" not in QUESTION_MAP
     assert "body_metrics" not in QUESTION_MAP
+    assert "previous_surgery_when" in QUESTION_MAP
+    assert "previous_surgery_year" not in QUESTION_MAP
+    assert "previous_surgery_month" not in QUESTION_MAP
     assert "weight_kg" not in QUESTION_MAP
     assert "height_cm" not in QUESTION_MAP
     assert "airway_limited_mouth_opening" not in QUESTION_MAP
@@ -128,6 +131,25 @@ def test_questionnaire_defers_airway_exam_to_camera_stage() -> None:
     assert QUESTION_MAP["recent_fever"].text == "Did you have any history of fever in the recent past?"
     assert QUESTION_MAP["recent_cough"].text == "Did you have a history of cough with or without discharge in the recent past?"
     assert QUESTION_MAP["anesthesiologist_suggestions"].text == "Is there any medical or personal information you would like your anesthetist to be aware of?"
+
+
+def test_previous_surgery_when_requires_both_month_and_year() -> None:
+    answers = {"previous_surgery": True}
+    question = QUESTION_MAP["previous_surgery_when"]
+
+    parsed = parse_answer(question, "2020", answers)
+    apply_parsed_answer(question, answers, parsed)
+
+    assert answers["previous_surgery_year"] == 2020
+    assert not is_question_complete(question, answers)
+    assert question_to_payload(question, answers)["text"] == "Thank you. I still need the month."
+
+    parsed = parse_answer(question, "March", answers)
+    apply_parsed_answer(question, answers, parsed)
+
+    assert answers["previous_surgery_month"] == "March"
+    assert is_question_complete(question, answers)
+    assert answers["previous_surgery_when"] == "March 2020"
 
 
 def test_incomplete_sessions_are_hidden_from_records() -> None:
