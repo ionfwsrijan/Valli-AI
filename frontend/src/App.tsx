@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import {
   createSession,
+  fetchVoiceStatus,
   fetchReport,
   fetchSession,
   fetchSessions,
@@ -36,8 +37,6 @@ const GREETING_MESSAGE =
 const DEFAULT_SPEECH_RATE = 0.95;
 const MIN_SPEECH_RATE = 0.95;
 const SLOW_SPEECH_STEP = 0;
-const SPEECH_PITCH = 1.02;
-const OPENAI_TTS_TIMEOUT_MS = 12000;
 const SILENT_AUDIO_DATA_URL =
   "data:audio/wav;base64,UklGRigGAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQQGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 const LANGUAGE_STORAGE_KEY = "doctor-language";
@@ -46,184 +45,6 @@ const ACTIVE_SESSION_STORAGE_KEY = "doctor-active-session-id";
 const LEGACY_ACTIVE_SESSION_STORAGE_KEY = "valli-active-session-id";
 const DRAFT_STORAGE_PREFIX = "doctor-draft";
 const LEGACY_DRAFT_STORAGE_PREFIX = "valli-draft";
-const FEMININE_VOICE_HINTS = [
-  "heera",
-  "zira",
-  "aria",
-  "samantha",
-  "serena",
-  "female",
-  "woman",
-  "girl",
-];
-
-function isEnglishVoice(voice: SpeechSynthesisVoice) {
-  return voice.lang.toLowerCase().startsWith("en");
-}
-
-function isTamilVoice(voice: SpeechSynthesisVoice) {
-  return voice.lang.toLowerCase().startsWith("ta");
-}
-
-function isHindiVoice(voice: SpeechSynthesisVoice) {
-  return voice.lang.toLowerCase().startsWith("hi");
-}
-
-function isTeluguVoice(voice: SpeechSynthesisVoice) {
-  return voice.lang.toLowerCase().startsWith("te");
-}
-
-function isMalayalamVoice(voice: SpeechSynthesisVoice) {
-  return voice.lang.toLowerCase().startsWith("ml");
-}
-
-function isKannadaVoice(voice: SpeechSynthesisVoice) {
-  return voice.lang.toLowerCase().startsWith("kn");
-}
-
-function isIndianEnglishVoice(voice: SpeechSynthesisVoice) {
-  return (
-    voice.lang.toLowerCase().startsWith("en-in") ||
-    voice.name.toLowerCase().includes("india")
-  );
-}
-
-function isTamilIndianVoice(voice: SpeechSynthesisVoice) {
-  return (
-    voice.lang.toLowerCase().startsWith("ta-in") ||
-    voice.name.toLowerCase().includes("tamil")
-  );
-}
-
-function isHindiIndianVoice(voice: SpeechSynthesisVoice) {
-  return (
-    voice.lang.toLowerCase().startsWith("hi-in") ||
-    voice.name.toLowerCase().includes("hindi")
-  );
-}
-
-function isTeluguIndianVoice(voice: SpeechSynthesisVoice) {
-  return (
-    voice.lang.toLowerCase().startsWith("te-in") ||
-    voice.name.toLowerCase().includes("telugu")
-  );
-}
-
-function isMalayalamIndianVoice(voice: SpeechSynthesisVoice) {
-  return (
-    voice.lang.toLowerCase().startsWith("ml-in") ||
-    voice.name.toLowerCase().includes("malayalam")
-  );
-}
-
-function isKannadaIndianVoice(voice: SpeechSynthesisVoice) {
-  return (
-    voice.lang.toLowerCase().startsWith("kn-in") ||
-    voice.name.toLowerCase().includes("kannada")
-  );
-}
-
-function hasFeminineHint(voice: SpeechSynthesisVoice) {
-  const haystack = `${voice.name} ${voice.voiceURI}`.toLowerCase();
-  return FEMININE_VOICE_HINTS.some((hint) => haystack.includes(hint));
-}
-
-function pickPreferredDoctorVoice(
-  voices: SpeechSynthesisVoice[],
-  language: AppLanguage,
-) {
-  if (language === "ta") {
-    return (
-      voices.find(
-        (voice) => hasFeminineHint(voice) && isTamilIndianVoice(voice),
-      ) ??
-      voices.find((voice) => hasFeminineHint(voice) && isTamilVoice(voice)) ??
-      voices.find((voice) => isTamilIndianVoice(voice)) ??
-      voices.find((voice) => isTamilVoice(voice)) ??
-      voices.find(
-        (voice) => hasFeminineHint(voice) && isIndianEnglishVoice(voice),
-      ) ??
-      voices.find((voice) => isIndianEnglishVoice(voice)) ??
-      null
-    );
-  }
-
-  if (language === "hi") {
-    return (
-      voices.find(
-        (voice) => hasFeminineHint(voice) && isHindiIndianVoice(voice),
-      ) ??
-      voices.find((voice) => hasFeminineHint(voice) && isHindiVoice(voice)) ??
-      voices.find((voice) => isHindiIndianVoice(voice)) ??
-      voices.find((voice) => isHindiVoice(voice)) ??
-      voices.find(
-        (voice) => hasFeminineHint(voice) && isIndianEnglishVoice(voice),
-      ) ??
-      voices.find((voice) => isIndianEnglishVoice(voice)) ??
-      null
-    );
-  }
-
-  if (language === "te") {
-    return (
-      voices.find(
-        (voice) => hasFeminineHint(voice) && isTeluguIndianVoice(voice),
-      ) ??
-      voices.find((voice) => hasFeminineHint(voice) && isTeluguVoice(voice)) ??
-      voices.find((voice) => isTeluguIndianVoice(voice)) ??
-      voices.find((voice) => isTeluguVoice(voice)) ??
-      voices.find(
-        (voice) => hasFeminineHint(voice) && isIndianEnglishVoice(voice),
-      ) ??
-      voices.find((voice) => isIndianEnglishVoice(voice)) ??
-      null
-    );
-  }
-
-  if (language === "ml") {
-    return (
-      voices.find(
-        (voice) => hasFeminineHint(voice) && isMalayalamIndianVoice(voice),
-      ) ??
-      voices.find((voice) => hasFeminineHint(voice) && isMalayalamVoice(voice)) ??
-      voices.find((voice) => isMalayalamIndianVoice(voice)) ??
-      voices.find((voice) => isMalayalamVoice(voice)) ??
-      voices.find(
-        (voice) => hasFeminineHint(voice) && isIndianEnglishVoice(voice),
-      ) ??
-      voices.find((voice) => isIndianEnglishVoice(voice)) ??
-      null
-    );
-  }
-
-  if (language === "kn") {
-    return (
-      voices.find(
-        (voice) => hasFeminineHint(voice) && isKannadaIndianVoice(voice),
-      ) ??
-      voices.find((voice) => hasFeminineHint(voice) && isKannadaVoice(voice)) ??
-      voices.find((voice) => isKannadaIndianVoice(voice)) ??
-      voices.find((voice) => isKannadaVoice(voice)) ??
-      voices.find(
-        (voice) => hasFeminineHint(voice) && isIndianEnglishVoice(voice),
-      ) ??
-      voices.find((voice) => isIndianEnglishVoice(voice)) ??
-      null
-    );
-  }
-
-  return (
-    voices.find(
-      (voice) => hasFeminineHint(voice) && isIndianEnglishVoice(voice),
-    ) ??
-    voices.find((voice) => hasFeminineHint(voice) && isEnglishVoice(voice)) ??
-    voices.find((voice) => hasFeminineHint(voice)) ??
-    voices.find((voice) => isIndianEnglishVoice(voice)) ??
-    voices.find((voice) => isEnglishVoice(voice)) ??
-    null
-  );
-}
-
 function spokenText(message: string) {
   return message
     .replace(/^Hospital policy guidance:\s*/i, "")
@@ -231,18 +52,6 @@ function spokenText(message: string) {
     .replace(/\n+/g, ". ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function shouldUseBrowserVoiceFallback(error: unknown) {
-  if (!(error instanceof Error)) {
-    return false;
-  }
-
-  const message = error.message.toLowerCase();
-  return (
-    message.includes("not configured on the server") ||
-    message.includes("openai voice is not configured")
-  );
 }
 
 function draftStorageKey(sessionId: string, questionId: string) {
@@ -319,6 +128,8 @@ function buildRephrasedPrompt(
 }
 
 export default function App() {
+  const [voiceStatus, setVoiceStatus] = useState<"checking" | "connected" | "unavailable">("checking");
+  const [voiceStatusDetail, setVoiceStatusDetail] = useState("Checking AI voice...");
   const [view, setView] = useState<AssessmentView>("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [language, setLanguage] = useState<AppLanguage>(() => {
@@ -349,9 +160,6 @@ export default function App() {
   const [resumableSession, setResumableSession] = useState<SessionSnapshot | null>(
     null,
   );
-  const [availableVoices, setAvailableVoices] = useState<
-    SpeechSynthesisVoice[]
-  >([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
   const speechRequestIdRef = useRef(0);
@@ -389,6 +197,7 @@ export default function App() {
     void refreshDashboard();
     void hydrateResumableSession();
     void warmBackend().catch(() => undefined);
+    void refreshVoiceStatus();
   }, []);
 
   useEffect(() => {
@@ -398,27 +207,6 @@ export default function App() {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
     window.localStorage.removeItem(LEGACY_LANGUAGE_STORAGE_KEY);
   }, [language]);
-
-  useEffect(() => {
-    if (!("speechSynthesis" in window)) {
-      return;
-    }
-
-    const synth = window.speechSynthesis;
-    const syncVoices = () => {
-      const nextVoices = synth.getVoices();
-      if (nextVoices.length) {
-        setAvailableVoices(nextVoices);
-      }
-    };
-
-    syncVoices();
-    synth.addEventListener("voiceschanged", syncVoices);
-
-    return () => {
-      synth.removeEventListener("voiceschanged", syncVoices);
-    };
-  }, []);
 
   useEffect(() => {
     if (!speech.transcript) {
@@ -549,6 +337,17 @@ export default function App() {
     }
   };
 
+  const refreshVoiceStatus = async () => {
+    try {
+      const result = await fetchVoiceStatus();
+      setVoiceStatus(result.status);
+      setVoiceStatusDetail(result.detail);
+    } catch {
+      setVoiceStatus("unavailable");
+      setVoiceStatusDetail("Unable to check AI voice right now.");
+    }
+  };
+
   const hydrateResumableSession = async () => {
     if (typeof window === "undefined") {
       return;
@@ -625,41 +424,11 @@ export default function App() {
     clearAudioPlayback();
   };
 
-  const speakEntriesWithBrowser = (
-    lines: string[],
-    rate: number,
-    languageOverride: AppLanguage = language,
-  ) => {
-    if (!("speechSynthesis" in window)) {
-      return;
-    }
-
-    const synth = window.speechSynthesis;
-    const selectedVoice = pickPreferredDoctorVoice(
-      availableVoices.length ? availableVoices : synth.getVoices(),
-      languageOverride,
-    );
-
-    synth.cancel();
-    lines.forEach((message) => {
-      const utterance = new SpeechSynthesisUtterance(message);
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        utterance.lang = selectedVoice.lang;
-      } else {
-        utterance.lang = speechLocale(languageOverride);
-      }
-      utterance.rate = rate;
-      utterance.pitch = SPEECH_PITCH;
-      synth.speak(utterance);
-    });
-  };
-
   const speakEntries = async (
     messages: string[],
     options: { force?: boolean; rate?: number; languageOverride?: AppLanguage } = {},
   ) => {
-    const { force = false, rate = speechRate, languageOverride = language } = options;
+    const { force = false, languageOverride = language } = options;
     if (!autoSpeak && !force) {
       return;
     }
@@ -679,12 +448,7 @@ export default function App() {
     clearAudioPlayback();
 
     try {
-      const audioBlob = await Promise.race([
-        fetchSpeechAudio(lines.join("\n\n"), languageOverride),
-        new Promise<never>((_, reject) => {
-          window.setTimeout(() => reject(new Error("tts_timeout")), OPENAI_TTS_TIMEOUT_MS);
-        }),
-      ]);
+      const audioBlob = await fetchSpeechAudio(lines.join("\n\n"), languageOverride);
       if (speechRequestIdRef.current !== requestId) {
         return;
       }
@@ -709,15 +473,25 @@ export default function App() {
         }
       };
       await audio.play();
+      setVoiceStatus("connected");
+      setVoiceStatusDetail("OpenAI voice is connected.");
       return;
     } catch (error) {
       if (speechRequestIdRef.current !== requestId) {
         return;
       }
       clearAudioPlayback();
-      if (shouldUseBrowserVoiceFallback(error)) {
-        speakEntriesWithBrowser(lines, rate, languageOverride);
-      }
+      setVoiceStatus("unavailable");
+      setVoiceStatusDetail(
+        error instanceof Error
+          ? `AI voice is unavailable right now: ${error.message}`
+          : "AI voice is unavailable right now.",
+      );
+      setError(
+        error instanceof Error
+          ? `AI voice is unavailable right now: ${error.message}`
+          : "AI voice is unavailable right now.",
+      );
     }
   };
 
@@ -1052,6 +826,13 @@ export default function App() {
     window.setTimeout(reset, 500);
   };
 
+  const voiceStatusLabel =
+    voiceStatus === "connected"
+      ? "AI voice connected"
+      : voiceStatus === "unavailable"
+        ? "AI voice unavailable"
+        : "Checking AI voice";
+
   return (
     <main className="app-shell">
       <section className="toolbar">
@@ -1331,9 +1112,12 @@ export default function App() {
                 finished, you will move to the camera page for the airway
                 examination.
               </p>
-              <p className="helper-text">
-                {t("The doctor's spoken voice is AI-generated.")}
-              </p>
+              <div className="voice-status-block">
+                <span className={`badge voice-status-badge ${voiceStatus}`}>
+                  {voiceStatusLabel}
+                </span>
+                <p className="helper-text">{voiceStatusDetail}</p>
+              </div>
             </div>
           </section>
 

@@ -617,6 +617,12 @@ textarea {
   line-height: 1.65;
 }
 
+.voice-status-block {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
 .panel-header h2,
 .report-sheet h3,
 .dashboard-card h3,
@@ -815,6 +821,21 @@ textarea {
 
 .badge.soft,
 .tag {
+  background: rgba(17, 17, 17, 0.06);
+  color: var(--muted);
+}
+
+.voice-status-badge.connected {
+  background: rgba(17, 17, 17, 0.1);
+  color: var(--accent);
+}
+
+.voice-status-badge.unavailable {
+  background: rgba(185, 28, 28, 0.12);
+  color: #991b1b;
+}
+
+.voice-status-badge.checking {
   background: rgba(17, 17, 17, 0.06);
   color: var(--muted);
 }

@@ -31,6 +31,18 @@ export function warmBackend(): Promise<{ status: string }> {
   return request<{ status: string }>('/api/health')
 }
 
+export function fetchVoiceStatus(): Promise<{
+  status: 'connected' | 'unavailable'
+  configured: boolean
+  detail: string
+}> {
+  return request<{
+    status: 'connected' | 'unavailable'
+    configured: boolean
+    detail: string
+  }>('/api/voice/status')
+}
+
 export function updateSessionLanguage(
   sessionId: string,
   language: AppLanguage,
