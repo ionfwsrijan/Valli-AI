@@ -16,8 +16,8 @@ except Exception:  # pragma: no cover - optional dependency for local/dev fallba
 DEMO_PATIENTS: list[dict[str, Any]] = [
     {
         "phone_number": "9876501234",
-        "patient_name": "Asha Raman",
-        "patient_age": 34,
+        "patient_name": "Shreya Tripathy",
+        "patient_age": 22,
         "patient_sex": "female",
         "height_cm": 162,
         "weight_kg": 68,
