@@ -8,6 +8,7 @@ import {
   fetchSpeechAudio,
   submitAnswer,
   submitVisionAirwayCapture,
+  updateSessionLanguage,
   warmBackend,
 } from "./api";
 import { AirwayVisionCard } from "./components/AirwayVisionCard";
@@ -31,15 +32,19 @@ import type {
 } from "./types";
 
 const GREETING_MESSAGE =
-  "Hello! I am Valli. You may use text or voice for taking the assessment.";
+  "Hello! I am the doctor guiding this assessment. You may use text or voice for taking the assessment.";
 const DEFAULT_SPEECH_RATE = 0.95;
 const MIN_SPEECH_RATE = 0.95;
 const SLOW_SPEECH_STEP = 0;
 const SPEECH_PITCH = 1.02;
 const SILENT_AUDIO_DATA_URL =
   "data:audio/wav;base64,UklGRigGAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQQGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-const ACTIVE_SESSION_STORAGE_KEY = "valli-active-session-id";
-const DRAFT_STORAGE_PREFIX = "valli-draft";
+const LANGUAGE_STORAGE_KEY = "doctor-language";
+const LEGACY_LANGUAGE_STORAGE_KEY = "valli-language";
+const ACTIVE_SESSION_STORAGE_KEY = "doctor-active-session-id";
+const LEGACY_ACTIVE_SESSION_STORAGE_KEY = "valli-active-session-id";
+const DRAFT_STORAGE_PREFIX = "doctor-draft";
+const LEGACY_DRAFT_STORAGE_PREFIX = "valli-draft";
 const FEMININE_VOICE_HINTS = [
   "heera",
   "zira",
@@ -122,7 +127,7 @@ function hasFeminineHint(voice: SpeechSynthesisVoice) {
   return FEMININE_VOICE_HINTS.some((hint) => haystack.includes(hint));
 }
 
-function pickPreferredValliVoice(
+function pickPreferredDoctorVoice(
   voices: SpeechSynthesisVoice[],
   language: AppLanguage,
 ) {
@@ -231,6 +236,10 @@ function draftStorageKey(sessionId: string, questionId: string) {
   return `${DRAFT_STORAGE_PREFIX}:${sessionId}:${questionId}`;
 }
 
+function legacyDraftStorageKey(sessionId: string, questionId: string) {
+  return `${LEGACY_DRAFT_STORAGE_PREFIX}:${sessionId}:${questionId}`;
+}
+
 function joinOptionsForSpeech(options: string[], language: AppLanguage) {
   if (!options.length) {
     return "";
@@ -303,7 +312,9 @@ export default function App() {
     if (typeof window === "undefined") {
       return "en";
     }
-    const savedLanguage = window.localStorage.getItem("valli-language");
+    const savedLanguage =
+      window.localStorage.getItem(LANGUAGE_STORAGE_KEY) ??
+      window.localStorage.getItem(LEGACY_LANGUAGE_STORAGE_KEY);
     return savedLanguage === "ta" ||
       savedLanguage === "hi" ||
       savedLanguage === "te" ||
@@ -371,7 +382,8 @@ export default function App() {
     if (typeof window === "undefined") {
       return;
     }
-    window.localStorage.setItem("valli-language", language);
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    window.localStorage.removeItem(LEGACY_LANGUAGE_STORAGE_KEY);
   }, [language]);
 
   useEffect(() => {
@@ -417,7 +429,11 @@ export default function App() {
     setDraftAnswer(
       window.localStorage.getItem(
         draftStorageKey(session.session_id, currentQuestionId),
-      ) ?? "",
+      ) ??
+        window.localStorage.getItem(
+          legacyDraftStorageKey(session.session_id, currentQuestionId),
+        ) ??
+        "",
     );
   }, [currentQuestionId, session?.session_id]);
 
@@ -433,10 +449,16 @@ export default function App() {
     const key = draftStorageKey(session.session_id, currentQuestionId);
     if (draftAnswer.trim()) {
       window.localStorage.setItem(key, draftAnswer);
+      window.localStorage.removeItem(
+        legacyDraftStorageKey(session.session_id, currentQuestionId),
+      );
       return;
     }
 
     window.localStorage.removeItem(key);
+    window.localStorage.removeItem(
+      legacyDraftStorageKey(session.session_id, currentQuestionId),
+    );
   }, [currentQuestionId, draftAnswer, session?.session_id]);
 
   useEffect(() => {
@@ -446,10 +468,11 @@ export default function App() {
 
     const storedSessionId = window.localStorage.getItem(
       ACTIVE_SESSION_STORAGE_KEY,
-    );
+    ) ?? window.localStorage.getItem(LEGACY_ACTIVE_SESSION_STORAGE_KEY);
 
     if (session && session.status !== "completed") {
       window.localStorage.setItem(ACTIVE_SESSION_STORAGE_KEY, session.session_id);
+      window.localStorage.removeItem(LEGACY_ACTIVE_SESSION_STORAGE_KEY);
       setResumableSession(session);
       return;
     }
@@ -459,6 +482,7 @@ export default function App() {
       storedSessionId === session.session_id
     ) {
       window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+      window.localStorage.removeItem(LEGACY_ACTIVE_SESSION_STORAGE_KEY);
       setResumableSession((current) =>
         current?.session_id === session.session_id ? null : current,
       );
@@ -519,7 +543,7 @@ export default function App() {
 
     const storedSessionId = window.localStorage.getItem(
       ACTIVE_SESSION_STORAGE_KEY,
-    );
+    ) ?? window.localStorage.getItem(LEGACY_ACTIVE_SESSION_STORAGE_KEY);
     if (!storedSessionId) {
       return;
     }
@@ -528,6 +552,7 @@ export default function App() {
       const savedSession = await fetchSession(storedSessionId);
       if (savedSession.status === "completed") {
         window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+        window.localStorage.removeItem(LEGACY_ACTIVE_SESSION_STORAGE_KEY);
         setResumableSession(null);
         return;
       }
@@ -535,6 +560,7 @@ export default function App() {
       setResumableSession(savedSession);
     } catch {
       window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+      window.localStorage.removeItem(LEGACY_ACTIVE_SESSION_STORAGE_KEY);
       setResumableSession(null);
     }
   };
@@ -589,15 +615,16 @@ export default function App() {
   const speakEntriesWithBrowser = (
     lines: string[],
     rate: number,
+    languageOverride: AppLanguage = language,
   ) => {
     if (!("speechSynthesis" in window)) {
       return;
     }
 
     const synth = window.speechSynthesis;
-    const selectedVoice = pickPreferredValliVoice(
+    const selectedVoice = pickPreferredDoctorVoice(
       availableVoices.length ? availableVoices : synth.getVoices(),
-      language,
+      languageOverride,
     );
 
     synth.cancel();
@@ -607,7 +634,7 @@ export default function App() {
         utterance.voice = selectedVoice;
         utterance.lang = selectedVoice.lang;
       } else {
-        utterance.lang = speechLocale(language);
+        utterance.lang = speechLocale(languageOverride);
       }
       utterance.rate = rate;
       utterance.pitch = SPEECH_PITCH;
@@ -617,15 +644,15 @@ export default function App() {
 
   const speakEntries = async (
     messages: string[],
-    options: { force?: boolean; rate?: number } = {},
+    options: { force?: boolean; rate?: number; languageOverride?: AppLanguage } = {},
   ) => {
-    const { force = false, rate = speechRate } = options;
+    const { force = false, rate = speechRate, languageOverride = language } = options;
     if (!autoSpeak && !force) {
       return;
     }
 
     const lines = messages
-      .map((message) => translateText(spokenText(message), language))
+      .map((message) => translateText(spokenText(message), languageOverride))
       .filter(Boolean);
     if (!lines.length) {
       return;
@@ -639,7 +666,7 @@ export default function App() {
     clearAudioPlayback();
 
     try {
-      const audioBlob = await fetchSpeechAudio(lines.join("\n\n"), language);
+      const audioBlob = await fetchSpeechAudio(lines.join("\n\n"), languageOverride);
       if (speechRequestIdRef.current !== requestId) {
         return;
       }
@@ -662,7 +689,7 @@ export default function App() {
         return;
       }
       clearAudioPlayback();
-      speakEntriesWithBrowser(lines, rate);
+      speakEntriesWithBrowser(lines, rate, languageOverride);
     }
   };
 
@@ -675,6 +702,50 @@ export default function App() {
     void speakEntries(["I'll say that again.", currentPromptForSpeech], {
       force: true,
     });
+  };
+
+  const handleLanguageChange = async (nextLanguage: AppLanguage) => {
+    if (nextLanguage === language) {
+      return;
+    }
+
+    const previousLanguage = language;
+    setLanguage(nextLanguage);
+    speech.stopListening();
+    speech.resetTranscript();
+    stopAssistantSpeech();
+    setError(null);
+
+    if (!session || session.status === "completed") {
+      return;
+    }
+
+    try {
+      const updated = await updateSessionLanguage(session.session_id, nextLanguage);
+      setSession(updated);
+      setResumableSession((current) =>
+        current?.session_id === updated.session_id ? updated : current,
+      );
+
+      const localizedPrompt = localizeQuestion(
+        updated.current_question,
+        nextLanguage,
+      )?.promptText;
+      if (localizedPrompt) {
+        await primeAudioPlayback();
+        void speakEntries([localizedPrompt], {
+          force: true,
+          languageOverride: nextLanguage,
+        });
+      }
+    } catch (requestError) {
+      setLanguage(previousLanguage);
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to update the assessment language",
+      );
+    }
   };
 
   const handleRephrasePrompt = () => {
@@ -760,6 +831,7 @@ export default function App() {
       if (resumed.status === "completed") {
         if (typeof window !== "undefined") {
           window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+          window.localStorage.removeItem(LEGACY_ACTIVE_SESSION_STORAGE_KEY);
         }
         setResumableSession(null);
         return;
@@ -781,6 +853,7 @@ export default function App() {
       );
       if (typeof window !== "undefined") {
         window.localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
+        window.localStorage.removeItem(LEGACY_ACTIVE_SESSION_STORAGE_KEY);
       }
       setResumableSession(null);
     } finally {
@@ -947,7 +1020,7 @@ export default function App() {
       <section className="toolbar">
         <div className="mobile-toolbar">
           <div className="mobile-brand-block">
-            <strong className="mobile-brand-title">Valli AI</strong>
+            <strong className="mobile-brand-title">{t("Doctor")}</strong>
           </div>
           <button
             aria-expanded={mobileMenuOpen}
@@ -993,7 +1066,9 @@ export default function App() {
               className="language-select"
               id="language-select"
               value={language}
-              onChange={(event) => setLanguage(event.target.value as AppLanguage)}
+              onChange={(event) =>
+                void handleLanguageChange(event.target.value as AppLanguage)
+              }
             >
               <option value="en">{labels.english}</option>
               <option value="ta">{labels.tamil}</option>
@@ -1071,7 +1146,9 @@ export default function App() {
                   className="language-select"
                   id="mobile-language-select"
                   value={language}
-                  onChange={(event) => setLanguage(event.target.value as AppLanguage)}
+                  onChange={(event) =>
+                    void handleLanguageChange(event.target.value as AppLanguage)
+                  }
                 >
                   <option value="en">{labels.english}</option>
                   <option value="ta">{labels.tamil}</option>
@@ -1101,7 +1178,7 @@ export default function App() {
         <section className="hero-shell">
           <div className="hero-copy">
             <div className="hero-kicker-row">
-              <span className="eyebrow">Valli</span>
+              <span className="eyebrow">{t("Doctor")}</span>
               <span className="hero-chip">{t("Pre-Anesthetic Assessment")}</span>
             </div>
             <h1>{t("AI assisted pre operative assessment.")}</h1>
@@ -1220,7 +1297,7 @@ export default function App() {
                 examination.
               </p>
               <p className="helper-text">
-                {t("Valli's spoken voice is AI-generated.")}
+                {t("The doctor's spoken voice is AI-generated.")}
               </p>
             </div>
           </section>

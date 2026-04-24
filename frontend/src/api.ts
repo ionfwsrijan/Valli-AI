@@ -31,6 +31,16 @@ export function warmBackend(): Promise<{ status: string }> {
   return request<{ status: string }>('/api/health')
 }
 
+export function updateSessionLanguage(
+  sessionId: string,
+  language: AppLanguage,
+): Promise<SessionSnapshot> {
+  return request<SessionSnapshot>(`/api/sessions/${sessionId}/language`, {
+    method: 'POST',
+    body: JSON.stringify({ language }),
+  })
+}
+
 export async function fetchSpeechAudio(text: string, language: AppLanguage): Promise<Blob> {
   const response = await fetch(`${API_BASE}/api/voice/speak`, {
     method: 'POST',

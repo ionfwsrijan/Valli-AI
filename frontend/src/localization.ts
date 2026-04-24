@@ -534,8 +534,13 @@ const WHY_HELPERS: Record<AppLanguage, Record<string, string>> = {
 const BASE_TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
   ta: {
     'Hello! I am Valli. You may use text or voice for taking the assessment.':
-      'வணக்கம்! நான் வள்ளி. இந்த மதிப்பீட்டிற்கு நீங்கள் உரை அல்லது குரலை பயன்படுத்தலாம்.',
+      'வணக்கம்! இந்த மதிப்பீட்டை வழிநடத்தும் மருத்துவர் நான். நீங்கள் உரை அல்லது குரலை பயன்படுத்தலாம்.',
+    'Hello! I am the doctor guiding this assessment. You may use text or voice for taking the assessment.':
+      'வணக்கம்! இந்த மதிப்பீட்டை வழிநடத்தும் மருத்துவர் நான். நீங்கள் உரை அல்லது குரலை பயன்படுத்தலாம்.',
     'Got it, thank you.': 'சரி, நன்றி.',
+    'Doctor': 'மருத்துவர்',
+    "The doctor's spoken voice is AI-generated.":
+      'மருத்துவரின் குரல் செயற்கை நுண்ணறிவால் உருவாக்கப்படுகிறது.',
     "I'll say that again.": 'அதை மீண்டும் சொல்கிறேன்.',
     'Let me say that more simply.': 'அதை இன்னும் எளிமையாகச் சொல்கிறேன்.',
     "Sure, I'll slow down.": 'சரி, நான் மெதுவாகச் சொல்கிறேன்.',
@@ -710,8 +715,13 @@ const BASE_TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
   },
   hi: {
     'Hello! I am Valli. You may use text or voice for taking the assessment.':
-      'नमस्ते! मैं वल्ली हूँ। इस आकलन के लिए आप टेक्स्ट या आवाज़ का उपयोग कर सकते हैं।',
+      'नमस्ते! मैं इस आकलन का मार्गदर्शन करने वाला डॉक्टर हूँ। आप टेक्स्ट या आवाज़ का उपयोग कर सकते हैं।',
+    'Hello! I am the doctor guiding this assessment. You may use text or voice for taking the assessment.':
+      'नमस्ते! मैं इस आकलन का मार्गदर्शन करने वाला डॉक्टर हूँ। आप टेक्स्ट या आवाज़ का उपयोग कर सकते हैं।',
     'Got it, thank you.': 'ठीक है, धन्यवाद।',
+    'Doctor': 'डॉक्टर',
+    "The doctor's spoken voice is AI-generated.":
+      'डॉक्टर की बोली जाने वाली आवाज़ एआई से बनाई गई है।',
     "I'll say that again.": 'मैं इसे फिर से कहती हूँ।',
     'Let me say that more simply.': 'मैं इसे थोड़ा आसान करके कहती हूँ।',
     "Sure, I'll slow down.": 'ठीक है, मैं धीरे बोलती हूँ।',
@@ -889,8 +899,13 @@ const BASE_TRANSLATIONS: Record<'ta' | 'hi', Record<string, string>> = {
 const EXTRA_TRANSLATIONS: Record<'te' | 'ml' | 'kn', Record<string, string>> = {
   te: {
     'Hello! I am Valli. You may use text or voice for taking the assessment.':
-      'నమస్తే! నేను వల్లి. ఈ అసెస్‌మెంట్ కోసం మీరు టెక్స్ట్ లేదా వాయిస్ ఉపయోగించవచ్చు.',
+      'నమస్తే! ఈ అసెస్‌మెంట్‌ను మార్గనిర్దేశం చేస్తున్న డాక్టర్‌ను నేను. మీరు టెక్స్ట్ లేదా వాయిస్ ఉపయోగించవచ్చు.',
+    'Hello! I am the doctor guiding this assessment. You may use text or voice for taking the assessment.':
+      'నమస్తే! ఈ అసెస్‌మెంట్‌ను మార్గనిర్దేశం చేస్తున్న డాక్టర్‌ను నేను. మీరు టెక్స్ట్ లేదా వాయిస్ ఉపయోగించవచ్చు.',
     'Got it, thank you.': 'సరే, ధన్యవాదాలు.',
+    'Doctor': 'డాక్టర్',
+    "The doctor's spoken voice is AI-generated.":
+      'డాక్టర్ మాటల స్వరం ఎఐ ద్వారా రూపొందించబడింది.',
     "I'll say that again.": 'నేను మళ్లీ చెబుతాను.',
     'Let me say that more simply.': 'ఇంకా సులభంగా చెబుతాను.',
     "Sure, I'll slow down.": 'సరే, నేను నెమ్మదిగా చెబుతాను.',
@@ -961,8 +976,13 @@ const EXTRA_TRANSLATIONS: Record<'te' | 'ml' | 'kn', Record<string, string>> = {
   },
   ml: {
     'Hello! I am Valli. You may use text or voice for taking the assessment.':
-      'നമസ്കാരം! ഞാൻ വള്ളി. ഈ അസസ്‌മെന്റിനായി നിങ്ങൾക്ക് ടെക്സ്റ്റ് അല്ലെങ്കിൽ ശബ്ദം ഉപയോഗിക്കാം.',
+      'നമസ്കാരം! ഈ അസസ്‌മെന്റ് നയിക്കുന്ന ഡോക്ടറാണ് ഞാൻ. ടെക്സ്റ്റ് അല്ലെങ്കിൽ ശബ്ദം ഉപയോഗിക്കാം.',
+    'Hello! I am the doctor guiding this assessment. You may use text or voice for taking the assessment.':
+      'നമസ്കാരം! ഈ അസസ്‌മെന്റ് നയിക്കുന്ന ഡോക്ടറാണ് ഞാൻ. ടെക്സ്റ്റ് അല്ലെങ്കിൽ ശബ്ദം ഉപയോഗിക്കാം.',
     'Got it, thank you.': 'ശരി, നന്ദി.',
+    'Doctor': 'ഡോക്ടർ',
+    "The doctor's spoken voice is AI-generated.":
+      'ഡോക്ടറുടെ ശബ്ദം എഐ ഉപയോഗിച്ച് സൃഷ്ടിച്ചതാണ്.',
     "I'll say that again.": 'ഞാൻ അത് വീണ്ടും പറയും.',
     'Let me say that more simply.': 'ഞാൻ അത് കൂടുതൽ ലളിതമായി പറയും.',
     "Sure, I'll slow down.": 'ശരി, ഞാൻ മന്ദഗതിയിൽ പറയും.',
@@ -1033,8 +1053,13 @@ const EXTRA_TRANSLATIONS: Record<'te' | 'ml' | 'kn', Record<string, string>> = {
   },
   kn: {
     'Hello! I am Valli. You may use text or voice for taking the assessment.':
-      'ನಮಸ್ಕಾರ! ನಾನು ವಳ್ಳಿ. ಈ ಮೌಲ್ಯಮಾಪನಕ್ಕಾಗಿ ನೀವು ಪಠ್ಯ ಅಥವಾ ಧ್ವನಿಯನ್ನು ಬಳಸಬಹುದು.',
+      'ನಮಸ್ಕಾರ! ಈ ಮೌಲ್ಯಮಾಪನವನ್ನು ಮುನ್ನಡೆಸುವ ವೈದ್ಯನು ನಾನು. ನೀವು ಪಠ್ಯ ಅಥವಾ ಧ್ವನಿಯನ್ನು ಬಳಸಬಹುದು.',
+    'Hello! I am the doctor guiding this assessment. You may use text or voice for taking the assessment.':
+      'ನಮಸ್ಕಾರ! ಈ ಮೌಲ್ಯಮಾಪನವನ್ನು ಮುನ್ನಡೆಸುವ ವೈದ್ಯನು ನಾನು. ನೀವು ಪಠ್ಯ ಅಥವಾ ಧ್ವನಿಯನ್ನು ಬಳಸಬಹುದು.',
     'Got it, thank you.': 'ಸರಿ, ಧನ್ಯವಾದಗಳು.',
+    'Doctor': 'ವೈದ್ಯರು',
+    "The doctor's spoken voice is AI-generated.":
+      'ವೈದ್ಯರ ಮಾತಿನ ಧ್ವನಿ ಎಐ ಮೂಲಕ ಸೃಷ್ಟಿಸಲಾಗಿದೆ.',
     "I'll say that again.": 'ನಾನು ಅದನ್ನು ಮತ್ತೆ ಹೇಳುತ್ತೇನೆ.',
     'Let me say that more simply.': 'ನಾನು ಅದನ್ನು ಇನ್ನೂ ಸರಳವಾಗಿ ಹೇಳುತ್ತೇನೆ.',
     "Sure, I'll slow down.": 'ಸರಿ, ನಾನು ನಿಧಾನವಾಗಿ ಹೇಳುತ್ತೇನೆ.',
