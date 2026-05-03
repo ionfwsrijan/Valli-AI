@@ -2,7 +2,7 @@
 
 A voice-first pre-anesthetic assessment workflow. It converts the PAC history made by doctors into a conversational interview, stores the clinician-patient dialogue verbatim, and generates live decision-support outputs for ASA status, STOP-Bang screening, airway risk, and contextual perioperative flags.
 
-The current build now uses all three AI layers you asked for:
+The current build now uses three AI layers:
 
 - NLP: extracts clinical concepts and red-flag phrases from free-text verbatim answers
 - ML: a `RandomForestClassifier` predicts perioperative risk from structured + NLP-derived features
